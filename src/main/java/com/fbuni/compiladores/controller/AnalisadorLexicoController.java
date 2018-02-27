@@ -18,27 +18,27 @@ import com.fbuni.compiladores.servico.AnalisadorLexicoServico;
 @RequestMapping(value = "/fbuni/analisador-lexico")
 public class AnalisadorLexicoController {
 
-    @Autowired
-    AnalisadorLexicoServico servico;
+	@Autowired
+	AnalisadorLexicoServico servico;
 
-    @RequestMapping(value = "/")
-    public String principal() {
-	return "principal";
-    }
-
-    @RequestMapping(value = "analisar", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public Map<String, Object> analisar(@RequestBody LinguagemAlvo linguagemAlvo) throws Exception {
-
-	Map<String, Object> retorno = new HashMap<String, Object>();
-
-	try {
-	    retorno.put("tabela", servico.analisar(linguagemAlvo));
-	} catch (Exception e) {
-	    throw new Exception("ocorreu um erro '-'");
+	@RequestMapping(value = "/")
+	public String principal() {
+		return "principal";
 	}
 
-	return null;
-    }
+	@RequestMapping(value = "analisar", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public Map<String, Object> analisar(@RequestBody LinguagemAlvo linguagemAlvo) throws Exception {
+
+		Map<String, Object> retorno = new HashMap<String, Object>();
+
+		try {
+			retorno.put("tabela", servico.analisar(linguagemAlvo));
+		} catch (Exception e) {
+			throw new Exception("ocorreu um erro '-'");
+		}
+
+		return retorno;
+	}
 
 }

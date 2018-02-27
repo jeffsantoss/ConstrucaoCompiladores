@@ -11,11 +11,17 @@ public enum ExpressoesRegulares {
 	// número inteiro
 	INTEIRO("0|[1-9][0-9]*"),
 	// caracteres de escape
-	CARACETERES_A_DESCARTAR("[\\n| |\\t|\\r]"),
+	CARACETERES_A_DESCARTAR("[\\n| |\\t|\\r|)(\\[\\]]"),
+	//
+	LITERAL("[\"]"),
 	// DELIMITADOR DE ABERTURA
-	DELIMITADOR_ABERTURA("\\{|\\("),
+	DELIMITADOR_ABERTURA("[\\{|\\(|\\[]"),
 	// DELIMITADOR DE FECHAMENTO
-	DELIMITADOR_FECHAMENTO("\\}|\\)");
+	DELIMITADOR_FECHAMENTO("[\\}|\\)|\\]]"),
+	// DELIMITADOR DE FECHAMENTO
+	SEPARADOR_DE_CLASSE("[.]"),
+	// SEPARADORES DE CARATECERES
+	SEPARADORES_CARACTERES("[\\}|\\)|\\]|;|,|.|\\{|\\(|\\[]");
 
 	private String key;
 

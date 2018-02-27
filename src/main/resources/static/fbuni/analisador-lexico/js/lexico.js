@@ -16,8 +16,19 @@ $("#btAnalisar").click(function(){
 		dataType: "json",
 		contentType:'application/json',
 		data: JSON.stringify(dados),	 
-		success: function(data) {
-			console.log(data);
+		success: function(retorno) {
+			$(retorno.tabela).each(function(i, classificacao){
+				$("#tabelaToken").empty();
+				
+				$("#tabelaToken tbody").append(
+						$("<tr/>").append(
+								$("<td/>").text(classificacao.lexema)).append(
+								$("<td/>").text(classificacao.simbolo)).append(
+								$("<td/>").text(classificacao.significado)).append(
+								$("<td/>").text(classificacao.codigoSimbolo)));
+			});
+			
+			$("#divTabela").show();
 		},
 		error: function(error) {
 			alert('Ocorreu um erro');

@@ -3,14 +3,7 @@ package com.fbuni.compiladores.model;
 public class Token {
 
 	private String nomeToken;
-	private String valorAtribuido;
-
-	public Token(String nomeToken, String valorAtribuido) {
-		this.nomeToken = nomeToken;
-		if (!valorAtribuido.isEmpty()) {
-			this.valorAtribuido = valorAtribuido;
-		}
-	}
+	private Integer valorAtribuido;
 
 	public Token(String nomeToken) {
 		this.nomeToken = nomeToken;
@@ -28,11 +21,11 @@ public class Token {
 		this.nomeToken = nomeToken;
 	}
 
-	public String getValorAtribuido() {
+	public Integer getValorAtribuido() {
 		return valorAtribuido;
 	}
 
-	public void setValorAtribuido(String valorAtribuido) {
+	public void setValorAtribuido(Integer valorAtribuido) {
 		this.valorAtribuido = valorAtribuido;
 	}
 

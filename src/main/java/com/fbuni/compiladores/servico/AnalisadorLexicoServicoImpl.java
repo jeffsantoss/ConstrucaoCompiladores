@@ -35,30 +35,13 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 		for (String linha : linhas) {
 
-			// String[] palavrasDaLinha = linha.split(" ");
+			List<String> palavrasDaLinha = obterPalavrasDaLinha(linha);
 
-			String palavraCorrente = "";
-
-			for (Character caractere : linha.toCharArray()) {
-
-				if (caractere == ' ') {
-					if (!palavraCorrente.matches(ExpressoesRegulares.CARACETERES_A_DESCARTAR.getExpressao())) {
-						classificarPalavra(palavraCorrente.trim(), tabela, numerolinha);
-					}
-					palavraCorrente = "";
+			for (String palavraCorrente : palavrasDaLinha) {
+				if (!palavraCorrente.matches(ExpressoesRegulares.CARACETERES_A_DESCARTAR.getExpressao())) {
+					classificarPalavra(palavraCorrente, tabela, numerolinha);
 				}
-
-				palavraCorrente += caractere.toString();
 			}
-
-			// for (String palavraCorrente : palavrasDaLinha) {
-			// if
-			// (!palavraCorrente.matches(ExpressoesRegulares.CARACETERES_A_DESCARTAR.getExpressao()))
-			// {
-			// classificarPalavra(palavraCorrente, tabela, numerolinha);
-			// }
-			// }
-
 		}
 
 		return tabela;
@@ -94,18 +77,12 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 				else if (expressao.toString().equals(ExpressoesRegulares.IDENTIFICADOR.toString())) {
 
-					if (EhFuncao(palavraCorrente)) {
-						if (palavraCorrente.contains(".")) {
-							classificarChamadaDeFuncao(palavraCorrente.split("."), classificacoes, linha);
-						}
-					}
-
 					if (!verificaJaExisteIdentificador(classificacoes, classificar.getLexema())) {
 						classificar.setCodigoSimbolo(CODIGO_SIMBOLO++);
 					}
 				}
 
-				classificar.setToken(new Token(expressao.toString(), CODIGO_SIMBOLO.toString()));
+				classificar.setToken(new Token(expressao.toString()));
 				classificacoes.add(classificar);
 				break;
 			}
@@ -139,44 +116,21 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		for (String chamada : chamadas) {
 			Classificacao classificacao = new Classificacao();
 
-			if (!EhFuncao(chamada)) {
-				classificacao.setLexema(chamada);
-				classificacao.setSignificado("PALAVRA_RESERVADA");
-				classificacao.setToken(new Token("PALAVRA_RESERVADA"));
-				classificacoes.add(classificacao);
-			} else {
+			classificacao.setLexema(chamada);
+			classificacao.setSignificado("IDENTIFICADOR");
 
-				String nomeFuncao = chamada.substring(chamada.indexOf(chamada.charAt(0)), chamada.indexOf(")"));
+			Token token = new Token("IDENTIFICADOR");
 
-				classificacao.setLexema(nomeFuncao);
-				classificacao.setSignificado("IDENTIFICADOR");
-				Token token = new Token();
-				token.setNomeToken("IDENTIFICADOR");
-				token.setValorAtribuido(nomeFuncao);
-
-				classificacao.setToken(token);
-
-				String parametro = chamada.substring(chamada.indexOf("("), chamada.indexOf(")"));
-
-				classificarParametroFuncao(parametro, classificacoes, linha);
-
-			}
-		}
-
-	}
-
-	private void classificarParametroFuncao(String parametroDaFuncao, List<Classificacao> classificacoes,
-			Integer linha) {
-
-		if (parametroDaFuncao.contains(",")) {
-
-			String[] parametros = parametroDaFuncao.split(",");
-
-			for (String parametro : parametros) {
-				classificarPalavra(parametro, classificacoes, linha);
+			if (!verificaJaExisteIdentificador(classificacoes, classificacao.getLexema())) {
+				classificacao.setCodigoSimbolo(CODIGO_SIMBOLO++);
+				token.setValorAtribuido(CODIGO_SIMBOLO++);
 			}
 
+			classificacao.setToken(new Token("IDENTIFICADOR"));
+			classificacoes.add(classificacao);
+
 		}
+
 	}
 
 	private boolean verificaJaExisteIdentificador(List<Classificacao> classificacoes, String lexema) {
@@ -190,4 +144,42 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		return false;
 	}
 
+	// desconsidera espaço de strings
+
+	public List<String> obterPalavrasDaLinha(String linha) {
+
+		List<String> palavras = new ArrayList<>();
+
+		String palavraCorrente = "";
+
+		for (Character caractere : linha.toCharArray()) {
+
+			if (caractere.toString().matches(ExpressoesRegulares.SEPARADORES_CARACTERES.getExpressao())) {
+				if (!palavraCorrente.isEmpty()) {
+					palavras.add(palavraCorrente.trim());
+				}
+
+				palavras.add(caractere.toString());
+
+				palavraCorrente = "";
+
+				continue;
+			}
+
+			if (!palavraCorrente.contains("\"")) {
+
+				if (caractere == ' ') {
+					if (!palavraCorrente.isEmpty()) {
+						palavras.add(palavraCorrente.trim());
+					}
+
+					palavraCorrente = "";
+				}
+			}
+
+			palavraCorrente += caractere.toString();
+		}
+
+		return palavras;
+	}
 }
