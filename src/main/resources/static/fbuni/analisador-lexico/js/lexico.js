@@ -18,14 +18,17 @@ $("#btAnalisar").click(function(){
 		data: JSON.stringify(dados),	 
 		success: function(retorno) {
 			$(retorno.tabela).each(function(i, classificacao){
-				$("#tabelaToken").empty();
+				//$("#tabelaToken").empty();
+				//console.log(classificacao.lexema)
+				var coluna = classificacao.lexema.colunaFinal ? "(" + classificacao.lexema.colunaInicial + "-" + classificacao.lexema.colunaFinal + ")" : classificacao.lexema.colunaInicial;
 				
 				$("#tabelaToken tbody").append(
 						$("<tr/>").append(
-								$("<td/>").text(classificacao.lexema)).append(
-								$("<td/>").text(classificacao.simbolo)).append(
-								$("<td/>").text(classificacao.significado)).append(
-								$("<td/>").text(classificacao.codigoSimbolo)));
+								$("<td/>").text(classificacao.lexema.palavra)).append(
+								$("<td/>").text(classificacao.lexema.padrao.descricao)).append(
+								$("<td/>").text(classificacao.lexema.linha)).append(								
+								$("<td/>").text(coluna)).append(
+								$("<td/>").text(classificacao.token.tokenFormatado)));
 			});
 			
 			$("#divTabela").show();

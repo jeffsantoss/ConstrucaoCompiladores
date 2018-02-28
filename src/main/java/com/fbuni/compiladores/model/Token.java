@@ -3,14 +3,18 @@ package com.fbuni.compiladores.model;
 public class Token {
 
 	private String nomeToken;
-	private Integer valorAtribuido;
-
-	public Token(String nomeToken) {
-		this.nomeToken = nomeToken;
-	}
+	private Integer codToken;
 
 	public Token() {
 		// TODO Auto-generated constructor stub
+	}
+
+	public Integer getCodToken() {
+		return codToken;
+	}
+
+	public void setCodToken(Integer codToken) {
+		this.codToken = codToken;
 	}
 
 	public String getNomeToken() {
@@ -21,12 +25,8 @@ public class Token {
 		this.nomeToken = nomeToken;
 	}
 
-	public Integer getValorAtribuido() {
-		return valorAtribuido;
-	}
-
-	public void setValorAtribuido(Integer valorAtribuido) {
-		this.valorAtribuido = valorAtribuido;
+	public String getTokenFormatado() {
+		return "<" + this.nomeToken + "," + this.codToken + ">";
 	}
 
 }

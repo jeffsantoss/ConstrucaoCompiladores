@@ -5,10 +5,12 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.fbuni.compiladores.enumeration.ExpressoesRegulares;
+import com.fbuni.compiladores.enumeration.ExpressaoRegular;
 import com.fbuni.compiladores.enumeration.Linguagem;
 import com.fbuni.compiladores.model.Classificacao;
+import com.fbuni.compiladores.model.Lexema;
 import com.fbuni.compiladores.model.LinguagemAlvo;
+import com.fbuni.compiladores.model.Padrao;
 import com.fbuni.compiladores.model.Token;
 
 @Service
@@ -35,105 +37,64 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 		for (String linha : linhas) {
 
-			List<String> palavrasDaLinha = obterPalavrasDaLinha(linha);
+			List<Lexema> lexemas = obterPalavrasDaLinha(linha, numerolinha++);
 
-			for (String palavraCorrente : palavrasDaLinha) {
-				if (!palavraCorrente.matches(ExpressoesRegulares.CARACETERES_A_DESCARTAR.getExpressao())) {
-					classificarPalavra(palavraCorrente, tabela, numerolinha);
-				}
+			for (Lexema lexema : lexemas) {
+				classificarLexema(lexema, tabela, numerolinha);
 			}
 		}
 
 		return tabela;
 	}
 
-	@SuppressWarnings("unlikely-arg-type")
-	private void classificarPalavra(String palavraCorrente, List<Classificacao> classificacoes, Integer linha) {
+	private void classificarLexema(Lexema lexema, List<Classificacao> classificacoes, Integer linha) {
 
-		Classificacao classificar = new Classificacao();
+		Classificacao classificacao = new Classificacao();
 
-		Boolean ehPalavraValida = false;
+		Token token = new Token();
 
-		for (ExpressoesRegulares expressao : ExpressoesRegulares.values()) {
+		for (ExpressaoRegular expressao : ExpressaoRegular.values()) {
 
-			if (palavraCorrente.matches(expressao.getExpressao())) {
+			if (lexema.getPalavra().matches(expressao.getExpressao())) {
 
-				ehPalavraValida = true;
+				lexema.setPadrao(new Padrao(expressao));
 
-				classificar.setLexema(palavraCorrente);
-				classificar.setSignificado(expressao.toString());
+				classificacao.setLexema(lexema);
 
-				if (expressao.toString().equals(ExpressoesRegulares.NUMERICO.toString())) {
-					if (palavraCorrente.contains(".")) {
-						classificar.setSimbolo("PONTO_FLUTUANTE");
+				if (expressao.toString().equals(ExpressaoRegular.NUMERICO.toString())) {
+
+					if (lexema.getPalavra().contains(".")) {
+						token.setNomeToken("PONTO_FLUTUANTE");
 					} else {
-						classificar.setSimbolo("INTEIRO");
-					}
-
-					if (!verificaJaExisteIdentificador(classificacoes, classificar.getLexema())) {
-						classificar.setCodigoSimbolo(CODIGO_SIMBOLO++);
+						token.setNomeToken("INTEIRO");
 					}
 				}
 
-				else if (expressao.toString().equals(ExpressoesRegulares.IDENTIFICADOR.toString())) {
+				else if (expressao.toString().equals(ExpressaoRegular.IDENTIFICADOR.toString())) {
 
-					if (!verificaJaExisteIdentificador(classificacoes, classificar.getLexema())) {
-						classificar.setCodigoSimbolo(CODIGO_SIMBOLO++);
-					}
+					// if (!verificaJaExisteIdentificador(classificacoes,
+					// classificacao.getLexema())) {
+					// token.setValorAtribuido(lexema.getPalavra());
+					// }
 				}
 
-				classificar.setToken(new Token(expressao.toString()));
-				classificacoes.add(classificar);
+				token.setNomeToken(lexema.getPalavra());
+				token.setCodToken(CODIGO_SIMBOLO++);
+				classificacao.setToken(token);
+
+				classificacoes.add(classificacao);
 				break;
 			}
 		}
 
-		if (ehPalavraValida) {
-			classificar.setLinha(linha);
-		} else {
-			classificar.setLexema(palavraCorrente);
-			classificar.setSignificado("SEM PADRÕES - ERRO");
-		}
-
-	}
-
-	private Boolean EhFuncao(String palavra) {
-
-		Boolean contemChavesCorretas = palavra.contains("(") && palavra.contains(")");
-		Boolean contemApenasChaveAbertura = palavra.contains("(");
-
-		if (contemChavesCorretas) {
-			return true;
-		} else if (contemApenasChaveAbertura) {
-			return true;
-		}
-
-		return false;
-	}
-
-	private void classificarChamadaDeFuncao(String[] chamadas, List<Classificacao> classificacoes, Integer linha) {
-
-		for (String chamada : chamadas) {
-			Classificacao classificacao = new Classificacao();
-
-			classificacao.setLexema(chamada);
-			classificacao.setSignificado("IDENTIFICADOR");
-
-			Token token = new Token("IDENTIFICADOR");
-
-			if (!verificaJaExisteIdentificador(classificacoes, classificacao.getLexema())) {
-				classificacao.setCodigoSimbolo(CODIGO_SIMBOLO++);
-				token.setValorAtribuido(CODIGO_SIMBOLO++);
-			}
-
-			classificacao.setToken(new Token("IDENTIFICADOR"));
+		if (lexema.getPadrao() == null) {
+			token.setNomeToken("ERRO");
+			classificacao.setToken(token);
 			classificacoes.add(classificacao);
-
 		}
-
 	}
 
-	private boolean verificaJaExisteIdentificador(List<Classificacao> classificacoes, String lexema) {
+	private boolean verificaJaExisteIdentificador(List<Classificacao> classificacoes, Lexema lexema) {
 
 		for (Classificacao classificacao : classificacoes) {
 			if (classificacao.getLexema().equals(lexema)) {
@@ -144,25 +105,29 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		return false;
 	}
 
-	// desconsidera espaço de strings
+	// usa os separadores de lexemas para fazer o split.
 
-	public List<String> obterPalavrasDaLinha(String linha) {
+	public List<Lexema> obterPalavrasDaLinha(String linha, Integer posicaoLinha) {
 
-		List<String> palavras = new ArrayList<>();
+		List<Lexema> lexemas = new ArrayList<>();
 
 		String palavraCorrente = "";
+		Integer coluna = 1;
 
 		for (Character caractere : linha.toCharArray()) {
 
-			if (caractere.toString().matches(ExpressoesRegulares.SEPARADORES_CARACTERES.getExpressao())) {
+			if (caractere.toString().matches(ExpressaoRegular.SEPARADORES_LEXEMAS.getExpressao())) {
 				if (!palavraCorrente.isEmpty()) {
-					palavras.add(palavraCorrente.trim());
+
+					lexemas.add(new Lexema(palavraCorrente.trim(), posicaoLinha, coluna - palavraCorrente.length(),
+							coluna));
 				}
 
-				palavras.add(caractere.toString());
+				lexemas.add(new Lexema(caractere.toString(), posicaoLinha, coluna));
 
 				palavraCorrente = "";
 
+				coluna++;
 				continue;
 			}
 
@@ -170,7 +135,8 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 				if (caractere == ' ') {
 					if (!palavraCorrente.isEmpty()) {
-						palavras.add(palavraCorrente.trim());
+						lexemas.add(new Lexema(palavraCorrente.trim(), posicaoLinha, coluna - palavraCorrente.length(),
+								coluna));
 					}
 
 					palavraCorrente = "";
@@ -178,8 +144,10 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 			}
 
 			palavraCorrente += caractere.toString();
+			coluna++;
 		}
 
-		return palavras;
+		return lexemas;
 	}
+
 }
