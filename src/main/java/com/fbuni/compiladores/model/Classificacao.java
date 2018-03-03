@@ -21,4 +21,19 @@ public class Classificacao {
 		this.token = token;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+
+		if (obj instanceof Classificacao) {
+
+			Classificacao outro = (Classificacao) obj;
+
+			if (this.lexema.equals(outro.getLexema())
+					&& this.lexema.getPadrao().equals(outro.getLexema().getPadrao())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 }

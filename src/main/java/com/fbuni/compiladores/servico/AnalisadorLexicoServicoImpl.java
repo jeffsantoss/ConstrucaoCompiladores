@@ -24,12 +24,29 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		if (!linguagemAlvo.getNomeLinguagem().equalsIgnoreCase(Linguagem.JS.getNome()))
 			throw new Exception("Analisador feito somente para javascript");
 
-		String[] linhas = linguagemAlvo.getCodigoFonte().split("\n");
+		Lexema comentario = verificaComentarios(linguagemAlvo);
 
-		return montaTabelaSimbolosJavaScript(linhas);
+		Classificacao classificacaoComentario = null;
+
+		if (!comentario.getPalavra().isEmpty()) {
+			classificacaoComentario = new Classificacao();
+			classificacaoComentario.setLexema(comentario);
+			Token token = new Token();
+			token.setCodToken(CODIGO_SIMBOLO++);
+			token.setNomeToken("COMENTÁRIO");
+			classificacaoComentario.setToken(token);
+		}
+
+		List<Classificacao> tabela = montaTabelaSimbolosJavaScript(linguagemAlvo.getCodigoFonte().split("\n"));
+
+		if (classificacaoComentario != null) {
+			tabela.add(classificacaoComentario);
+		}
+
+		return tabela;
 	}
 
-	private List<Classificacao> montaTabelaSimbolosJavaScript(String[] linhas) {
+	private List<Classificacao> montaTabelaSimbolosJavaScript(String[] linhas) throws Exception {
 
 		List<Classificacao> tabela = new ArrayList<Classificacao>();
 
@@ -45,6 +62,51 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		}
 
 		return tabela;
+	}
+
+	private Lexema verificaComentarios(LinguagemAlvo linguagem) throws Exception {
+
+		String comentarioAbertura = "/*";
+		String comentarioFechamento = "*/";
+		Integer linha = 1;
+		Lexema lexema = new Lexema("");
+		String comentario = "";
+		String codigoFonte = linguagem.getCodigoFonte();
+
+		if (codigoFonte.contains(comentarioAbertura) && !codigoFonte.contains(comentarioFechamento)) {
+			throw new Exception("Comentário aberto não foi fechado");
+		} else if (codigoFonte.contains(comentarioFechamento) && !codigoFonte.contains(comentarioAbertura)) {
+			throw new Exception("Comentário não foi aberto");
+		}
+
+		if (codigoFonte.contains(comentarioAbertura) && codigoFonte.contains(comentarioFechamento)) {
+
+			if (codigoFonte.indexOf(comentarioAbertura) > codigoFonte.indexOf(comentarioFechamento)) {
+				throw new Exception("Comentário de fechamento antes do de abertura");
+			}
+
+			for (int i = codigoFonte.indexOf(comentarioAbertura); i <= codigoFonte.indexOf(comentarioFechamento)
+					+ 1; i++) {
+
+				if (codigoFonte.charAt(i) != '\n') {
+					comentario += codigoFonte.charAt(i);
+					linguagem.setCodigoFonte(this.replace(linguagem.getCodigoFonte(), i, Character.MIN_VALUE));
+				} else {
+					linha++;
+				}
+
+			}
+
+		}
+		if (!comentario.isEmpty()) {
+			lexema.setPalavra(comentario);
+			Padrao padrao = new Padrao();
+			padrao.setDescricao("Comentário");
+			lexema.setPadrao(padrao);
+			lexema.setLinha(linha);
+		}
+
+		return lexema;
 	}
 
 	private void classificarLexema(Lexema lexema, List<Classificacao> classificacoes, Integer linha) {
@@ -70,16 +132,11 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 					}
 				}
 
-				else if (expressao.toString().equals(ExpressaoRegular.IDENTIFICADOR.toString())) {
-
-					// if (!verificaJaExisteIdentificador(classificacoes,
-					// classificacao.getLexema())) {
-					// token.setValorAtribuido(lexema.getPalavra());
-					// }
+				if (!verificaJaExisteIdentificador(classificacoes, classificacao)) {
+					token.setCodToken(CODIGO_SIMBOLO++);
 				}
 
-				token.setNomeToken(lexema.getPalavra());
-				token.setCodToken(CODIGO_SIMBOLO++);
+				token.setNomeToken(expressao.toString());
 				classificacao.setToken(token);
 
 				classificacoes.add(classificacao);
@@ -88,16 +145,16 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		}
 
 		if (lexema.getPadrao() == null) {
-			token.setNomeToken("ERRO");
+			token.setNomeToken("ERRO - PADRÃO NÃO DEFINIDO");
 			classificacao.setToken(token);
 			classificacoes.add(classificacao);
 		}
 	}
 
-	private boolean verificaJaExisteIdentificador(List<Classificacao> classificacoes, Lexema lexema) {
+	private boolean verificaJaExisteIdentificador(List<Classificacao> classificacoes, Classificacao classificacao) {
 
-		for (Classificacao classificacao : classificacoes) {
-			if (classificacao.getLexema().equals(lexema)) {
+		for (Classificacao classific : classificacoes) {
+			if (classific.equals(classificacao)) {
 				return true;
 			}
 		}
@@ -117,10 +174,10 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		for (Character caractere : linha.toCharArray()) {
 
 			if (caractere.toString().matches(ExpressaoRegular.SEPARADORES_LEXEMAS.getExpressao())) {
-				if (!palavraCorrente.isEmpty()) {
 
+				if (!palavraCorrente.isEmpty()) {
 					lexemas.add(new Lexema(palavraCorrente.trim(), posicaoLinha, coluna - palavraCorrente.length(),
-							coluna));
+							coluna - 1));
 				}
 
 				lexemas.add(new Lexema(caractere.toString(), posicaoLinha, coluna));
@@ -128,6 +185,7 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 				palavraCorrente = "";
 
 				coluna++;
+
 				continue;
 			}
 
@@ -148,6 +206,17 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		}
 
 		return lexemas;
+	}
+
+	private String replace(String str, int index, char replace) {
+		if (str == null) {
+			return str;
+		} else if (index < 0 || index >= str.length()) {
+			return str;
+		}
+		char[] chars = str.toCharArray();
+		chars[index] = replace;
+		return String.valueOf(chars);
 	}
 
 }

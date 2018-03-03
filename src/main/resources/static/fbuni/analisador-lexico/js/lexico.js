@@ -33,8 +33,8 @@ $("#btAnalisar").click(function(){
 			
 			$("#divTabela").show();
 		},
-		error: function(error) {
-			alert('Ocorreu um erro');
+		error: function(xhr, message) {			
+			alert(xhr.responseJSON.message);
 		}
   });
 });

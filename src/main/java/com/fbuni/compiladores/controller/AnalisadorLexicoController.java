@@ -35,7 +35,7 @@ public class AnalisadorLexicoController {
 		try {
 			retorno.put("tabela", servico.analisar(linguagemAlvo));
 		} catch (Exception e) {
-			throw new Exception("ocorreu um erro '-'");
+			throw new Exception(e.getMessage());
 		}
 
 		return retorno;
