@@ -17,10 +17,11 @@ $("#btAnalisar").click(function(){
 		contentType:'application/json',
 		data: JSON.stringify(dados),	 
 		success: function(retorno) {
+			
+			$("#tabelaToken tbody").empty();
+			
 			$(retorno.tabela).each(function(i, classificacao){
-				//$("#tabelaToken").empty();
-				//console.log(classificacao.lexema)
-				var coluna = classificacao.lexema.colunaFinal ? "(" + classificacao.lexema.colunaInicial + "-" + classificacao.lexema.colunaFinal + ")" : classificacao.lexema.colunaInicial;
+				var coluna = classificacao.lexema.colunaFinal ? "(" + classificacao.lexema.colunaInicial + "," + classificacao.lexema.colunaFinal + ")" : classificacao.lexema.colunaInicial;
 				
 				$("#tabelaToken tbody").append(
 						$("<tr/>").append(

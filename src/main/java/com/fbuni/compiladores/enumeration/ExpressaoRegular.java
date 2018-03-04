@@ -7,7 +7,7 @@ public enum ExpressaoRegular {
 	// indentificador qualquer
 	IDENTIFICADOR("[_|a-z|A-Z][a-z|A-Z|0-9|_]*"),
 	// considera ponto flutuante
-	NUMERICO("\"[-+]?[0-9]*\\\\.?[0-9]+\""),
+	NUMERICO("[-+]?[0-9]*\\.?[0-9]+"),
 	//
 	LITERAL("\\\"(\\\\.|[^\\\"])*\\\""),
 	// ABERTURA DE FUNÇÃO
@@ -19,7 +19,7 @@ public enum ExpressaoRegular {
 	// DELIMITADOR DE FECHAMENTO
 	FIM_DE_LINHA("[;]"),
 	// SEPARADORES DE CARATECERES
-	SEPARADORES_LEXEMAS("[\\}|\\)|\\]|;|,|.|\\{|\\(|\\[]");
+	SEPARADORES_LEXEMAS("[\\}|\\)|\\]|;|.|\\{|\\(|\\[]");
 
 	private String key;
 

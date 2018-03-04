@@ -16,7 +16,7 @@ import com.fbuni.compiladores.model.Token;
 @Service
 public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
-	private Integer CODIGO_SIMBOLO = 0;
+	private Integer CODIGO_SIMBOLO;
 
 	@Override
 	public List<Classificacao> analisar(LinguagemAlvo linguagemAlvo) throws Exception {
@@ -24,54 +24,90 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		if (!linguagemAlvo.getNomeLinguagem().equalsIgnoreCase(Linguagem.JS.getNome()))
 			throw new Exception("Analisador feito somente para javascript");
 
-		Lexema comentario = verificaComentarios(linguagemAlvo);
+		// zera sempre quando for analisar
+		CODIGO_SIMBOLO = 0;
 
-		Classificacao classificacaoComentario = null;
-
-		if (!comentario.getPalavra().isEmpty()) {
-			classificacaoComentario = new Classificacao();
-			classificacaoComentario.setLexema(comentario);
-			Token token = new Token();
-			token.setCodToken(CODIGO_SIMBOLO++);
-			token.setNomeToken("COMENTÁRIO");
-			classificacaoComentario.setToken(token);
-		}
-
-		List<Classificacao> tabela = montaTabelaSimbolosJavaScript(linguagemAlvo.getCodigoFonte().split("\n"));
-
-		if (classificacaoComentario != null) {
-			tabela.add(classificacaoComentario);
-		}
-
-		return tabela;
+		return montaTabelaSimbolosJavaScript(linguagemAlvo);
 	}
 
-	private List<Classificacao> montaTabelaSimbolosJavaScript(String[] linhas) throws Exception {
+	private List<Classificacao> montaTabelaSimbolosJavaScript(LinguagemAlvo linguagem) throws Exception {
 
 		List<Classificacao> tabela = new ArrayList<Classificacao>();
 
+		List<Lexema> comentarios = verificaComentarios(linguagem);
+
+		if (!comentarios.isEmpty()) {
+			for (Lexema comentario : comentarios) {
+				Classificacao classificacaoComentario = new Classificacao();
+				classificacaoComentario.setLexema(comentario);
+				Token token = new Token();
+				token.setCodToken(CODIGO_SIMBOLO++);
+				token.setNomeToken("COMENTÁRIO");
+				classificacaoComentario.setToken(token);
+				tabela.add(classificacaoComentario);
+			}
+		}
+
 		Integer numerolinha = 1;
 
-		for (String linha : linhas) {
+		for (String linha : linguagem.getCodigoFonte().split("\n")) {
 
 			List<Lexema> lexemas = obterPalavrasDaLinha(linha, numerolinha++);
 
 			for (Lexema lexema : lexemas) {
-				classificarLexema(lexema, tabela, numerolinha);
+				if (!lexema.getPalavra().isEmpty()) {
+					classificarLexema(lexema, tabela, numerolinha);
+				}
 			}
 		}
 
 		return tabela;
 	}
 
-	private Lexema verificaComentarios(LinguagemAlvo linguagem) throws Exception {
+	private List<Lexema> verificaComentarios(LinguagemAlvo linguagem) throws Exception {
 
 		String comentarioAbertura = "/*";
 		String comentarioFechamento = "*/";
-		Integer linha = 1;
-		Lexema lexema = new Lexema("");
+		String comentarioLinha = "//";
 		String comentario = "";
 		String codigoFonte = linguagem.getCodigoFonte();
+
+		List<Lexema> comentarios = new ArrayList<>();
+
+		boolean existirComentarioDeLinha = codigoFonte.contains(comentarioLinha);
+
+		if (existirComentarioDeLinha) {
+
+			while (existirComentarioDeLinha) {
+
+				int indexComentarioNormal = linguagem.getCodigoFonte().indexOf(comentarioLinha);
+
+				// final do arquivo
+				if (linguagem.getCodigoFonte().indexOf('\n', indexComentarioNormal) == -1) {
+					comentario = linguagem.getCodigoFonte().substring(indexComentarioNormal,
+							linguagem.getCodigoFonte().length());
+
+					limparComentario(indexComentarioNormal, linguagem.getCodigoFonte().length(), linguagem);
+
+				} else {
+					comentario = linguagem.getCodigoFonte().substring(indexComentarioNormal,
+							linguagem.getCodigoFonte().indexOf('\n', indexComentarioNormal));
+
+					limparComentario(indexComentarioNormal,
+							linguagem.getCodigoFonte().indexOf('\n', indexComentarioNormal), linguagem);
+				}
+
+				existirComentarioDeLinha = linguagem.getCodigoFonte().contains(comentarioLinha);
+
+				Lexema lexemaComentarioDeLinha = new Lexema(comentario);
+				Padrao padrao = new Padrao();
+				padrao.setDescricao("Comentário de LINHA");
+				lexemaComentarioDeLinha.setPadrao(padrao);
+				comentarios.add(lexemaComentarioDeLinha);
+			}
+		}
+
+		comentario = "";
 
 		if (codigoFonte.contains(comentarioAbertura) && !codigoFonte.contains(comentarioFechamento)) {
 			throw new Exception("Comentário aberto não foi fechado");
@@ -81,32 +117,37 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 		if (codigoFonte.contains(comentarioAbertura) && codigoFonte.contains(comentarioFechamento)) {
 
-			if (codigoFonte.indexOf(comentarioAbertura) > codigoFonte.indexOf(comentarioFechamento)) {
-				throw new Exception("Comentário de fechamento antes do de abertura");
-			}
+			int indexComentarioAbertura = codigoFonte.indexOf(comentarioAbertura);
+			int indexComentarioFechamento = codigoFonte.indexOf(comentarioFechamento);
 
-			for (int i = codigoFonte.indexOf(comentarioAbertura); i <= codigoFonte.indexOf(comentarioFechamento)
-					+ 1; i++) {
+			while (indexComentarioAbertura != -1 || indexComentarioFechamento != -1) {
 
-				if (codigoFonte.charAt(i) != '\n') {
-					comentario += codigoFonte.charAt(i);
-					linguagem.setCodigoFonte(this.replace(linguagem.getCodigoFonte(), i, Character.MIN_VALUE));
-				} else {
-					linha++;
+				if (indexComentarioAbertura > indexComentarioFechamento) {
+					throw new Exception("Comentário de fechamento antes do de abertura");
 				}
 
+				for (int i = indexComentarioAbertura; i <= indexComentarioFechamento + 1; i++) {
+
+					if (codigoFonte.charAt(i) != '\n') {
+						comentario += codigoFonte.charAt(i);
+						linguagem.setCodigoFonte(replace(linguagem.getCodigoFonte(), i, Character.MIN_VALUE));
+					}
+				}
+
+				indexComentarioAbertura = codigoFonte.indexOf(comentarioAbertura, ++indexComentarioAbertura);
+				indexComentarioFechamento = codigoFonte.indexOf(comentarioFechamento, ++indexComentarioFechamento);
+
+				if (!comentario.isEmpty()) {
+					Lexema lexemaComentarioDeLinha = new Lexema(comentario);
+					Padrao padrao = new Padrao();
+					padrao.setDescricao("Comentário de ESCOPO");
+					lexemaComentarioDeLinha.setPadrao(padrao);
+					comentarios.add(lexemaComentarioDeLinha);
+				}
 			}
-
-		}
-		if (!comentario.isEmpty()) {
-			lexema.setPalavra(comentario);
-			Padrao padrao = new Padrao();
-			padrao.setDescricao("Comentário");
-			lexema.setPadrao(padrao);
-			lexema.setLinha(linha);
 		}
 
-		return lexema;
+		return comentarios;
 	}
 
 	private void classificarLexema(Lexema lexema, List<Classificacao> classificacoes, Integer linha) {
@@ -125,7 +166,7 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 				if (expressao.toString().equals(ExpressaoRegular.NUMERICO.toString())) {
 
-					if (lexema.getPalavra().contains(".")) {
+					if (lexema.getPalavra().contains(",")) {
 						token.setNomeToken("PONTO_FLUTUANTE");
 					} else {
 						token.setNomeToken("INTEIRO");
@@ -145,8 +186,16 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		}
 
 		if (lexema.getPadrao() == null) {
-			token.setNomeToken("ERRO - PADRÃO NÃO DEFINIDO");
+			Padrao padrao = new Padrao();
+			padrao.setDescricao("SEM PADRÃO DEFINIDO");
+			lexema.setPadrao(padrao);
+			token.setNomeToken("ERROR");
+			token.setCodToken(-1);
+			lexema.setColunaFinal(-1);
+			lexema.setColunaInicial(-1);
+
 			classificacao.setToken(token);
+			classificacao.setLexema(lexema);
 			classificacoes.add(classificacao);
 		}
 	}
@@ -170,6 +219,8 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 		String palavraCorrente = "";
 		Integer coluna = 1;
+
+		linha += " ";
 
 		for (Character caractere : linha.toCharArray()) {
 
@@ -206,6 +257,7 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		}
 
 		return lexemas;
+
 	}
 
 	private String replace(String str, int index, char replace) {
@@ -217,6 +269,13 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		char[] chars = str.toCharArray();
 		chars[index] = replace;
 		return String.valueOf(chars);
+	}
+
+	private void limparComentario(int indexInicial, int indexFinal, LinguagemAlvo linguagem) {
+		for (int i = indexInicial; i < indexFinal; i++) {
+			linguagem.setCodigoFonte(replace(linguagem.getCodigoFonte(), i, Character.MIN_VALUE));
+		}
+
 	}
 
 }
