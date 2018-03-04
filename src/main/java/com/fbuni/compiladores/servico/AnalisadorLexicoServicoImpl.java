@@ -70,11 +70,10 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		String comentarioFechamento = "*/";
 		String comentarioLinha = "//";
 		String comentario = "";
-		String codigoFonte = linguagem.getCodigoFonte();
 
 		List<Lexema> comentarios = new ArrayList<>();
 
-		boolean existirComentarioDeLinha = codigoFonte.contains(comentarioLinha);
+		boolean existirComentarioDeLinha = linguagem.getCodigoFonte().contains(comentarioLinha);
 
 		if (existirComentarioDeLinha) {
 
@@ -104,38 +103,43 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 				padrao.setDescricao("Comentário de LINHA");
 				lexemaComentarioDeLinha.setPadrao(padrao);
 				comentarios.add(lexemaComentarioDeLinha);
+
+				comentario = "";
+
 			}
 		}
 
-		comentario = "";
-
-		if (codigoFonte.contains(comentarioAbertura) && !codigoFonte.contains(comentarioFechamento)) {
+		if (linguagem.getCodigoFonte().contains(comentarioAbertura)
+				&& !linguagem.getCodigoFonte().contains(comentarioFechamento)) {
 			throw new Exception("Comentário aberto não foi fechado");
-		} else if (codigoFonte.contains(comentarioFechamento) && !codigoFonte.contains(comentarioAbertura)) {
+		} else if (linguagem.getCodigoFonte().contains(comentarioFechamento)
+				&& !linguagem.getCodigoFonte().contains(comentarioAbertura)) {
 			throw new Exception("Comentário não foi aberto");
 		}
 
-		if (codigoFonte.contains(comentarioAbertura) && codigoFonte.contains(comentarioFechamento)) {
+		boolean existirComentarioDeEscopo = linguagem.getCodigoFonte().contains(comentarioAbertura)
+				&& linguagem.getCodigoFonte().contains(comentarioFechamento);
 
-			int indexComentarioAbertura = codigoFonte.indexOf(comentarioAbertura);
-			int indexComentarioFechamento = codigoFonte.indexOf(comentarioFechamento);
+		if (existirComentarioDeEscopo) {
 
-			while (indexComentarioAbertura != -1 || indexComentarioFechamento != -1) {
+			while (existirComentarioDeEscopo) {
+
+				int indexComentarioAbertura = linguagem.getCodigoFonte().indexOf(comentarioAbertura);
+				int indexComentarioFechamento = linguagem.getCodigoFonte().indexOf(comentarioFechamento);
 
 				if (indexComentarioAbertura > indexComentarioFechamento) {
 					throw new Exception("Comentário de fechamento antes do de abertura");
 				}
 
 				for (int i = indexComentarioAbertura; i <= indexComentarioFechamento + 1; i++) {
-
-					if (codigoFonte.charAt(i) != '\n') {
-						comentario += codigoFonte.charAt(i);
+					if (linguagem.getCodigoFonte().charAt(i) != '\n') {
+						comentario += linguagem.getCodigoFonte().charAt(i);
 						linguagem.setCodigoFonte(replace(linguagem.getCodigoFonte(), i, Character.MIN_VALUE));
 					}
 				}
 
-				indexComentarioAbertura = codigoFonte.indexOf(comentarioAbertura, ++indexComentarioAbertura);
-				indexComentarioFechamento = codigoFonte.indexOf(comentarioFechamento, ++indexComentarioFechamento);
+				existirComentarioDeEscopo = linguagem.getCodigoFonte().contains(comentarioAbertura)
+						&& linguagem.getCodigoFonte().contains(comentarioFechamento);
 
 				if (!comentario.isEmpty()) {
 					Lexema lexemaComentarioDeLinha = new Lexema(comentario);
@@ -144,6 +148,8 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 					lexemaComentarioDeLinha.setPadrao(padrao);
 					comentarios.add(lexemaComentarioDeLinha);
 				}
+
+				comentario = "";
 			}
 		}
 
