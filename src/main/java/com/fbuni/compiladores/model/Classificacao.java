@@ -28,8 +28,8 @@ public class Classificacao {
 
 			Classificacao outro = (Classificacao) obj;
 
-			if (this.lexema.equals(outro.getLexema())
-					&& this.lexema.getPadrao().equals(outro.getLexema().getPadrao())) {
+			if (this.lexema.getPalavra().equals(outro.getLexema().getPalavra())
+					&& this.token.getNomeToken().equals(outro.getToken().getNomeToken())) {
 				return true;
 			}
 		}

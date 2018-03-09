@@ -26,14 +26,16 @@ public class Padrao {
 			this.descricao = "Indica a abertura de função, escopo ou indexação";
 		} else if (expressao.equals(ExpressaoRegular.FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO)) {
 			this.descricao = "Indica o fechamento de função, escopo ou indexação";
-		} else if (expressao.equals(ExpressaoRegular.IDENTIFICADOR)) {
+		} else if (expressao.equals(ExpressaoRegular.ID)) {
 			this.descricao = "Identificador de função, variáveis";
 		} else if (expressao.equals(ExpressaoRegular.LITERAL)) {
 			this.descricao = "Identificador de String entre aspas";
-		} else if (expressao.equals(ExpressaoRegular.SEPARADOR_DE_CLASSE)) {
-			this.descricao = "Identificador de separador de classe";
+		} else if (expressao.equals(ExpressaoRegular.OPERADORES)) {
+			this.descricao = "Identificação de operadores";
 		} else if (expressao.equals(ExpressaoRegular.PALAVRA_RESERVADA)) {
 			this.descricao = "Palavra reservada da linguagem";
+		} else if (expressao.equals(ExpressaoRegular.NUMERICO)) {
+			this.descricao = "Números inteiros e reais";
 		}
 	}
 

@@ -3,9 +3,9 @@ package com.fbuni.compiladores.enumeration;
 public enum ExpressaoRegular {
 
 	// palavras reservadas da linguagem
-	PALAVRA_RESERVADA("while|if|for|public|class|static|void"),
+	PALAVRA_RESERVADA("while|if|for|public|class|static|void|var|function|int|float"),
 	// indentificador qualquer
-	IDENTIFICADOR("[_|a-z|A-Z][a-z|A-Z|0-9|_]*"),
+	ID("[_|a-z|A-Z][a-z|A-Z|0-9|_]*"),
 	// considera ponto flutuante
 	NUMERICO("[-+]?[0-9]*\\.?[0-9]+"),
 	//
@@ -15,11 +15,11 @@ public enum ExpressaoRegular {
 	// DELIMITADOR DE FECHAMENTO
 	FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO("[\\}|\\)|\\]]"),
 	// DELIMITADOR DE FECHAMENTO
-	SEPARADOR_DE_CLASSE("[.]"),
+	OPERADORES("[.|=|/|*]"),
 	// DELIMITADOR DE FECHAMENTO
 	FIM_DE_LINHA("[;]"),
 	// SEPARADORES DE CARATECERES
-	SEPARADORES_LEXEMAS("[\\}|\\)|\\]|;|.|\\{|\\(|\\[]");
+	SEPARADORES_LEXEMAS("[\\}|\\)|\\]|;|,|.|\\{|\\(|\\[]");
 
 	private String key;
 

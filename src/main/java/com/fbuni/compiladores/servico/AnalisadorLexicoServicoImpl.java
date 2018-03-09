@@ -144,7 +144,7 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 				if (!comentario.isEmpty()) {
 					Lexema lexemaComentarioDeLinha = new Lexema(comentario);
 					Padrao padrao = new Padrao();
-					padrao.setDescricao("Comentário de ESCOPO");
+					padrao.setDescricao("Comentário de BLOCO");
 					lexemaComentarioDeLinha.setPadrao(padrao);
 					comentarios.add(lexemaComentarioDeLinha);
 				}
@@ -167,24 +167,32 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 			if (lexema.getPalavra().matches(expressao.getExpressao())) {
 
 				lexema.setPadrao(new Padrao(expressao));
-
+				token.setNomeToken(expressao.toString());
+				token.setCodToken(CODIGO_SIMBOLO++);
 				classificacao.setLexema(lexema);
+				classificacao.setToken(token);
 
 				if (expressao.toString().equals(ExpressaoRegular.NUMERICO.toString())) {
 
-					if (lexema.getPalavra().contains(",")) {
-						token.setNomeToken("PONTO_FLUTUANTE");
+					if (lexema.getPalavra().contains(".")) {
+						classificacao.getToken().setNomeToken("PONTO_FLUTUANTE");
 					} else {
-						token.setNomeToken("INTEIRO");
+						classificacao.getToken().setNomeToken("INTEIRO");
 					}
 				}
 
-				if (!verificaJaExisteIdentificador(classificacoes, classificacao)) {
-					token.setCodToken(CODIGO_SIMBOLO++);
-				}
+				if (expressao.toString().equals(ExpressaoRegular.ID.toString())) {
 
-				token.setNomeToken(expressao.toString());
-				classificacao.setToken(token);
+					if (estaDentroDeFuncao(classificacoes)) {
+						classificacao.getToken().setNomeToken("ID_VAR_LOCAL");
+					}
+
+					if (verificaJaExisteIdentificador(classificacoes, classificacao)) {
+						// faz nada
+						return;
+					}
+
+				}
 
 				classificacoes.add(classificacao);
 				break;
@@ -209,9 +217,20 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 	private boolean verificaJaExisteIdentificador(List<Classificacao> classificacoes, Classificacao classificacao) {
 
 		for (Classificacao classific : classificacoes) {
-			if (classific.equals(classificacao)) {
+			if (classificacao.equals(classific)) {
 				return true;
 			}
+		}
+
+		return false;
+	}
+
+	// true - é variável local, false - é variável global
+	private boolean estaDentroDeFuncao(List<Classificacao> classificacoes) {
+
+		for (int i = classificacoes.size() - 1; i >= 0; i--) {
+			if (classificacoes.get(i).getLexema().getPalavra().equals("("))
+				return true;
 		}
 
 		return false;
@@ -232,18 +251,24 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 			if (caractere.toString().matches(ExpressaoRegular.SEPARADORES_LEXEMAS.getExpressao())) {
 
-				if (!palavraCorrente.isEmpty()) {
-					lexemas.add(new Lexema(palavraCorrente.trim(), posicaoLinha, coluna - palavraCorrente.length(),
-							coluna - 1));
+				if (palavraCorrente.trim().matches(ExpressaoRegular.NUMERICO.getExpressao()) && caractere.equals(".")) {
+					// faz nada
+				} else {
+
+					if (!palavraCorrente.isEmpty()) {
+						lexemas.add(new Lexema(palavraCorrente.trim(), posicaoLinha, coluna - palavraCorrente.length(),
+								coluna - 1));
+					}
+
+					lexemas.add(new Lexema(caractere.toString(), posicaoLinha, coluna));
+
+					palavraCorrente = "";
+
+					coluna++;
+
+					continue;
 				}
 
-				lexemas.add(new Lexema(caractere.toString(), posicaoLinha, coluna));
-
-				palavraCorrente = "";
-
-				coluna++;
-
-				continue;
 			}
 
 			if (!palavraCorrente.contains("\"")) {
