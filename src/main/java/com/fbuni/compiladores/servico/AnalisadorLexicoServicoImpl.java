@@ -251,7 +251,7 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 			if (caractere.toString().matches(ExpressaoRegular.SEPARADORES_LEXEMAS.getExpressao())) {
 
-				if (palavraCorrente.trim().matches(ExpressaoRegular.NUMERICO.getExpressao()) && caractere.equals(".")) {
+				if (palavraCorrente.trim().matches(ExpressaoRegular.NUMERICO.getExpressao()) && caractere.equals('.')) {
 					// faz nada
 				} else {
 
