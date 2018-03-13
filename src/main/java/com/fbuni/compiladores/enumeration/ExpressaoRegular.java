@@ -3,7 +3,7 @@ package com.fbuni.compiladores.enumeration;
 public enum ExpressaoRegular {
 
 	// palavras reservadas da linguagem
-	PALAVRA_RESERVADA("while|if|for|public|class|static|void|var|function|int|float"),
+	PALAVRA_RESERVADA("while|if|for|public|class|static|void|var|function|int|float|return"),
 	// indentificador qualquer
 	ID("[_|a-z|A-Z][a-z|A-Z|0-9|_]*"),
 	// considera ponto flutuante

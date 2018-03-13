@@ -229,8 +229,14 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 	private boolean estaDentroDeFuncao(List<Classificacao> classificacoes) {
 
 		for (int i = classificacoes.size() - 1; i >= 0; i--) {
-			if (classificacoes.get(i).getLexema().getPalavra().equals("("))
+
+			if (classificacoes.get(i).getLexema().getPalavra().equals("}")) {
+				return false;
+			}
+
+			if (classificacoes.get(i).getLexema().getPalavra().equals("(")) {
 				return true;
+			}
 		}
 
 		return false;
