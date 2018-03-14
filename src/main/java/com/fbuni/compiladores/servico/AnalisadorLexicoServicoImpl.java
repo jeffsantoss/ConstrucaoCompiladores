@@ -56,7 +56,16 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 			for (Lexema lexema : lexemas) {
 				if (!lexema.getPalavra().isEmpty()) {
-					classificarLexema(lexema, tabela, numerolinha);
+
+					int indiceLexemaAtual = lexemas.indexOf(lexema);
+
+					List<Lexema> posterioresLexemasDaLinha = new ArrayList<>();
+
+					for (int i = indiceLexemaAtual + 1; i < lexemas.size(); i++) {
+						posterioresLexemasDaLinha.add(lexemas.get(i));
+					}
+
+					classificarLexema(lexema, tabela, numerolinha, posterioresLexemasDaLinha);
 				}
 			}
 		}
@@ -156,7 +165,8 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		return comentarios;
 	}
 
-	private void classificarLexema(Lexema lexema, List<Classificacao> classificacoes, Integer linha) {
+	private void classificarLexema(Lexema lexema, List<Classificacao> classificacoes, Integer linha,
+			List<Lexema> lexemasPosterioresDaLinha) {
 
 		Classificacao classificacao = new Classificacao();
 
@@ -184,7 +194,18 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 				if (expressao.toString().equals(ExpressaoRegular.ID.toString())) {
 
 					if (estaDentroDeFuncao(classificacoes)) {
-						classificacao.getToken().setNomeToken("ID_VAR_LOCAL");
+
+						if (ehFuncao(lexemasPosterioresDaLinha)) {
+							classificacao.getToken().setNomeToken("ID_CHAMADA_FUNCAO");
+						} else {
+							classificacao.getToken().setNomeToken("ID_VAR_LOCAL");
+						}
+
+					} else {
+
+						if (ehFuncao(lexemasPosterioresDaLinha)) {
+							classificacao.getToken().setNomeToken("ID_DECLARAÇÃO_FUNCAO");
+						}
 					}
 
 					if (verificaJaExisteIdentificador(classificacoes, classificacao)) {
@@ -212,6 +233,14 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 			classificacao.setLexema(lexema);
 			classificacoes.add(classificacao);
 		}
+	}
+
+	private boolean ehFuncao(List<Lexema> lexemas) {
+
+		Lexema primeirolexemaPosterior = lexemas.stream().findFirst().get();
+		// Lexema segundolexemaPosterior = lexemas.stream().skip(1).findFirst().get();
+
+		return primeirolexemaPosterior.getPalavra().equals("(");
 	}
 
 	private boolean verificaJaExisteIdentificador(List<Classificacao> classificacoes, Classificacao classificacao) {
