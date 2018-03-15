@@ -19,7 +19,7 @@ public enum ExpressaoRegular {
 	// DELIMITADOR DE FECHAMENTO
 	FIM_DE_LINHA("[;]"),
 	// SEPARADORES DE CARATECERES
-	SEPARADORES_LEXEMAS("[\\}|\\)|\\]|;|,|.|\\{|\\(|\\[]");
+	SEPARADORES_LEXEMAS("[\\}|\\)|\\]|;|,|.|+|\\{|\\(|\\[]");
 
 	private String key;
 
