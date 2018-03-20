@@ -215,6 +215,11 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 				}
 
+				if (expressao.toString().equals(ExpressaoRegular.SEPARADORES_LEXEMAS.toString())
+						|| expressao.toString().equals(ExpressaoRegular.FIM_DE_LINHA.toString())) {
+					return;
+				}
+
 				classificacoes.add(classificacao);
 				break;
 			}
