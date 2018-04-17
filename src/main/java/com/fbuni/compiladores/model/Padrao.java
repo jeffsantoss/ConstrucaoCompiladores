@@ -30,7 +30,7 @@ public class Padrao {
 			this.descricao = "Identificador de função, variáveis";
 		} else if (expressao.equals(ExpressaoRegular.LITERAL)) {
 			this.descricao = "Identificador de String entre aspas";
-		} else if (expressao.equals(ExpressaoRegular.OPERADORES)) {
+		} else if (expressao.equals(ExpressaoRegular.OPERADOR)) {
 			this.descricao = "Identificação de operadores";
 		} else if (expressao.equals(ExpressaoRegular.PALAVRA_RESERVADA)) {
 			this.descricao = "Palavra reservada da linguagem";

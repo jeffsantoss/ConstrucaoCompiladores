@@ -14,8 +14,10 @@ public enum ExpressaoRegular {
 	ABERTURA_FUNCAO_ESCOPO_INDEXACAO("[\\{|\\(|\\[]"),
 	// DELIMITADOR DE FECHAMENTO
 	FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO("[\\}|\\)|\\]]"),
+	// atribuição
+	ATRIBUIÇÃO("[=]"),	
 	// DELIMITADOR DE FECHAMENTO
-	OPERADORES("[.|=|/|*|+|-]"),
+	OPERADOR("[.|=|/|*|+|-]"),
 	// DELIMITADOR DE FECHAMENTO
 	FIM_DE_LINHA("[;]"),
 	// SEPARADORES DE CARATECERES

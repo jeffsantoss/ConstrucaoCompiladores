@@ -11,8 +11,9 @@ $("#btAnalisar").click(function(){
 	console.log(dados);
 	
 	$.ajax({
+		
 		type: "POST",
-		url: 'analisar',
+		url: 'sintatico',
 		dataType: "json",
 		contentType:'application/json',
 		data: JSON.stringify(dados),	 
@@ -33,6 +34,8 @@ $("#btAnalisar").click(function(){
 			});
 			
 			$("#divTabela").show();
+			
+			alert(retorno.mensagem);
 		},
 		error: function(xhr, message) {			
 			alert(xhr.responseJSON.message);

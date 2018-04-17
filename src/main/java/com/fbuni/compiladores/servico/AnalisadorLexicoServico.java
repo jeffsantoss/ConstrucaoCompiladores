@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import com.fbuni.compiladores.model.Classificacao;
 import com.fbuni.compiladores.model.LinguagemAlvo;
 
-@Service
 public interface AnalisadorLexicoServico {
 
     public List<Classificacao> analisar(LinguagemAlvo linguagemAlvo) throws Exception;
