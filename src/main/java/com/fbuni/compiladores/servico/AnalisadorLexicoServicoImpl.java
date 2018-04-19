@@ -208,9 +208,10 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 			}
 		    }
 
-		    if (verificaJaExisteIdentificador(classificacoes, classificacao)) {
-			// faz nada
-			return;
+		    Classificacao classificacaoExistente = verificaJaExisteIdentificador(classificacoes, classificacao);
+		    if (classificacaoExistente != null) {
+			classificacoes.add(classificacaoExistente);
+			break;
 		    }
 
 		}
@@ -249,20 +250,21 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 	return primeirolexemaPosterior.getPalavra().equals("(");
     }
 
-    private boolean verificaJaExisteIdentificador(List<Classificacao> classificacoes, Classificacao classificacao) {
+    private Classificacao verificaJaExisteIdentificador(List<Classificacao> classificacoes,
+	    Classificacao classificacao) {
 
 	for (int i = 1; i < classificacoes.size(); i++) {
 
 	    if (classificacoes.get(i).equals(classificacao)) {
 		if (!classificacoes.get(classificacoes.size() - 1).getToken().getNomeToken()
 			.equals("PALAVRA_RESERVADA")) {
-		    return true;
+		    return classificacoes.get(i);
 		}
 	    }
 
 	}
 
-	return false;
+	return null;
     }
 
     // true - é variável local, false - é variável global

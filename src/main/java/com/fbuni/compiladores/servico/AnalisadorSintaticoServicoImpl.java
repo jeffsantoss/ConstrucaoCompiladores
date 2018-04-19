@@ -7,6 +7,7 @@ import java.util.stream.IntStream;
 import org.springframework.stereotype.Service;
 
 import com.fbuni.compiladores.model.Classificacao;
+import com.fbuni.compiladores.model.Expressao;
 import com.fbuni.compiladores.model.Token;
 
 @Service
@@ -32,12 +33,14 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	validaDeclaracaoDeVariavel(variaveis, tabelaSimbolos);
 
 	// valida se mesma varíavel foi declarada mais de 1x
-	validaDeclaracaoVariaveisRepetidas(variaveis);
+	validaDeclaracaoVariaveisRepetidas(variaveis, tabelaSimbolos);
 
 	IntStream.range(0, qtdLinhas).forEach(linha -> {
 
 	    List<Classificacao> classificacoesDaLinha = tabelaSimbolos.stream()
 		    .filter(x -> x.getLexema().getLinha().equals(linha + 1)).collect(Collectors.toList());
+
+	    removeDuplicados(classificacoesDaLinha);
 
 	    validaPontoVirgula(classificacoesDaLinha.get(classificacoesDaLinha.size() - 1).getToken(), linha + 1);
 
@@ -50,7 +53,23 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 
     }
 
+    private void removeDuplicados(List<Classificacao> classificacoes) {
+
+	for (int i = 0; i < classificacoes.size(); i++) {
+	    for (int j = i + 1; j < classificacoes.size(); j++) {
+		if (classificacoes.get(i).getToken().getCodToken()
+			.equals(classificacoes.get(j).getToken().getCodToken())) {
+		    classificacoes.remove(j);
+		}
+
+	    }
+	}
+
+    }
+
     private void validaDeclaracaoDeVariavel(List<Classificacao> variaveis, List<Classificacao> tabelaSimbolos) {
+
+	removeDuplicados(variaveis);
 
 	for (Classificacao variavel : variaveis) {
 
@@ -67,24 +86,35 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 
     }
 
-    private void validaDeclaracaoVariaveisRepetidas(List<Classificacao> identificadoresVariavel)
-	    throws IllegalArgumentException {
+    private void validaDeclaracaoVariaveisRepetidas(List<Classificacao> identificadoresVariavel,
+	    List<Classificacao> tabelaSimbolos) throws IllegalArgumentException {
+
+	removeDuplicados(identificadoresVariavel);
 
 	for (int i = 0; i < identificadoresVariavel.size(); i++) {
 	    for (int j = i + 1; j < identificadoresVariavel.size(); j++) {
 		if (identificadoresVariavel.get(i).getLexema().getPalavra()
 			.equals(identificadoresVariavel.get(j).getLexema().getPalavra())) {
-		    throw estourarExcessao(identificadoresVariavel.get(j).getLexema().getLinha(), "a variável >"
-			    + identificadoresVariavel.get(i).getLexema().getPalavra() + "< já foi declarada");
+
+		    Classificacao classificacao = obterClassificacaoPorCodigo(tabelaSimbolos,
+			    identificadoresVariavel.get(j).getToken().getCodToken());
+
+		    Integer indiceClassificacaoIgual = tabelaSimbolos.indexOf(classificacao);
+
+		    if (tabelaSimbolos.get(indiceClassificacaoIgual - 1).getToken()
+			    .getNomeToken() == "PALAVRA_RESERVADA") {
+			throw estourarExcessao(identificadoresVariavel.get(j).getLexema().getLinha(), "a variável >"
+				+ identificadoresVariavel.get(i).getLexema().getPalavra() + "< já foi declarada");
+		    }
 		}
 	    }
 	}
 
     }
 
-    private Classificacao obterClassificacaoPorCodigo(List<Classificacao> classificacoesDaLinha, Integer codToken) {
+    private Classificacao obterClassificacaoPorCodigo(List<Classificacao> classificacaoes, Integer codToken) {
 
-	for (Classificacao classificacao : classificacoesDaLinha) {
+	for (Classificacao classificacao : classificacaoes) {
 	    if (classificacao.getToken().getCodToken().equals(codToken)) {
 		return classificacao;
 	    }
@@ -107,12 +137,9 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
     private void validaExpressoesComParentese(List<Classificacao> classificacoesDaLinha)
 	    throws IllegalArgumentException {
 
-	if (contemToken(classificacoesDaLinha, "ID")) {
-
-	}
-
 	Integer numlinha = classificacoesDaLinha.get(0).getLexema().getLinha();
 
+	// parênteses
 	Long qtdAbertura = classificacoesDaLinha.stream()
 		.filter(c -> c.getToken().getNomeToken().equals("ABERTURA_FUNCAO_ESCOPO_INDEXACAO")).count();
 
@@ -123,6 +150,37 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	    throw estourarExcessao(numlinha, "expressão inválida, falta parênteses a fechar");
 	} else if (qtdFechamento > qtdAbertura) {
 	    throw estourarExcessao(numlinha, "expressão inválida, falta parênteses a abrir");
+	}
+
+	List<Classificacao> classificacoesSemParentese = classificacoesDaLinha.stream().filter(item -> {
+
+	    if (item.getToken().getNomeToken().equals("ABERTURA_FUNCAO_ESCOPO_INDEXACAO")
+		    || item.getToken().getNomeToken().equals("FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO")) {
+		return false;
+	    }
+
+	    return true;
+
+	}).collect(Collectors.toList());
+
+	List<Classificacao> operadores = classificacoesSemParentese.stream()
+		.filter(item -> item.getToken().getNomeToken() == "OPERADOR").collect(Collectors.toList());
+
+	for (int i = 0; i < operadores.size(); i++) {
+
+	    Integer indiceOperador = classificacoesSemParentese.indexOf(operadores.get(i));
+
+	    try {
+
+		new Expressao(classificacoesSemParentese.get(indiceOperador - 1), operadores.get(i),
+			classificacoesSemParentese.get(indiceOperador + 1));
+
+	    } catch (IllegalArgumentException e) {
+		throw estourarExcessao(numlinha, e.getMessage());
+	    } catch (Exception e) {
+		throw estourarExcessao(numlinha, "Expressão inválida! coluna: " + indiceOperador);
+	    }
+
 	}
 
     }
