@@ -52,7 +52,7 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 	for (String linha : linguagem.getCodigoFonte().split("\n")) {
 
-	    List<Lexema> lexemas = obterPalavrasDaLinha(linha, numerolinha++);
+	    List<Lexema> lexemas = obterPalavrasDaLinha(linha, numerolinha);
 
 	    for (Lexema lexema : lexemas) {
 		if (!lexema.getPalavra().isEmpty()) {
@@ -68,6 +68,8 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		    classificarLexema(lexema, tabela, numerolinha, posterioresLexemasDaLinha);
 		}
 	    }
+
+	    numerolinha++;
 	}
 
 	return tabela;
@@ -210,6 +212,7 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 		    Classificacao classificacaoExistente = verificaJaExisteIdentificador(classificacoes, classificacao);
 		    if (classificacaoExistente != null) {
+			classificacaoExistente.getLexema().setLinha(linha);
 			classificacoes.add(classificacaoExistente);
 			break;
 		    }

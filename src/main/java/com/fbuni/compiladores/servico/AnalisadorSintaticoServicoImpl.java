@@ -27,7 +27,7 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 
 	List<Classificacao> variaveis = tabelaSimbolos.stream().filter(
 		c -> c.getToken().getNomeToken().equals("ID") || c.getToken().getNomeToken().equals("ID_VAR_LOCAL"))
-		.collect(Collectors.toList());
+		.distinct().collect(Collectors.toList());
 
 	// valida se as váriaveis foram declarado ou não
 	validaDeclaracaoDeVariavel(variaveis, tabelaSimbolos);
@@ -40,9 +40,12 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	    List<Classificacao> classificacoesDaLinha = tabelaSimbolos.stream()
 		    .filter(x -> x.getLexema().getLinha().equals(linha + 1)).collect(Collectors.toList());
 
-	    removeDuplicados(classificacoesDaLinha);
+	    List<Classificacao> classificacoesDaLinhaSemDuplicacao = classificacoesDaLinha.stream().distinct()
+		    .collect(Collectors.toList());
 
-	    validaPontoVirgula(classificacoesDaLinha.get(classificacoesDaLinha.size() - 1).getToken(), linha + 1);
+	    validaPontoVirgula(
+		    classificacoesDaLinhaSemDuplicacao.get(classificacoesDaLinhaSemDuplicacao.size() - 1).getToken(),
+		    linha + 1);
 
 	    // expressões com parênteses.
 	    if (contemToken(classificacoesDaLinha, "OPERADOR")) {
@@ -53,23 +56,7 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 
     }
 
-    private void removeDuplicados(List<Classificacao> classificacoes) {
-
-	for (int i = 0; i < classificacoes.size(); i++) {
-	    for (int j = i + 1; j < classificacoes.size(); j++) {
-		if (classificacoes.get(i).getToken().getCodToken()
-			.equals(classificacoes.get(j).getToken().getCodToken())) {
-		    classificacoes.remove(j);
-		}
-
-	    }
-	}
-
-    }
-
     private void validaDeclaracaoDeVariavel(List<Classificacao> variaveis, List<Classificacao> tabelaSimbolos) {
-
-	removeDuplicados(variaveis);
 
 	for (Classificacao variavel : variaveis) {
 
@@ -88,8 +75,6 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 
     private void validaDeclaracaoVariaveisRepetidas(List<Classificacao> identificadoresVariavel,
 	    List<Classificacao> tabelaSimbolos) throws IllegalArgumentException {
-
-	removeDuplicados(identificadoresVariavel);
 
 	for (int i = 0; i < identificadoresVariavel.size(); i++) {
 	    for (int j = i + 1; j < identificadoresVariavel.size(); j++) {
