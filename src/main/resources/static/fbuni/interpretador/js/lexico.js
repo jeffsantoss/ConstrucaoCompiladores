@@ -8,8 +8,6 @@ $("#btAnalisar").click(function(){
 		nomeLinguagem : 'javascript'
 	};
 	
-	console.log(dados);
-	
 	$.ajax({
 		
 		type: "POST",
@@ -21,7 +19,7 @@ $("#btAnalisar").click(function(){
 			
 			$("#tabelaToken tbody").empty();
 			
-			$(retorno.tabela).each(function(i, classificacao){
+			$(retorno.tabelaSimbolos).each(function(i, classificacao){
 				var coluna = classificacao.lexema.colunaFinal ? "(" + classificacao.lexema.colunaInicial + "," + classificacao.lexema.colunaFinal + ")" : classificacao.lexema.colunaInicial;
 				
 				$("#tabelaToken tbody").append(
