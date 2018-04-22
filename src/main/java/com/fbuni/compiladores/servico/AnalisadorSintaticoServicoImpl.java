@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import com.fbuni.compiladores.model.Classificacao;
 import com.fbuni.compiladores.model.Expressao;
-import com.fbuni.compiladores.model.Token;
 
 @Service
 public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServico {
@@ -43,9 +42,7 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	    List<Classificacao> classificacoesDaLinhaSemDuplicacao = classificacoesDaLinha.stream().distinct()
 		    .collect(Collectors.toList());
 
-	    validaPontoVirgula(
-		    classificacoesDaLinhaSemDuplicacao.get(classificacoesDaLinhaSemDuplicacao.size() - 1).getToken(),
-		    linha + 1);
+	    validaPontoVirgula(classificacoesDaLinhaSemDuplicacao, linha + 1);
 
 	    // expressões com parênteses.
 	    if (contemToken(classificacoesDaLinha, "OPERADOR")) {
@@ -63,6 +60,10 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	    Integer codToken = variavel.getToken().getCodToken();
 
 	    Classificacao classificacaoAnterior = obterClassificacaoPorCodigo(tabelaSimbolos, codToken - 1);
+
+	    if (classificacaoAnterior.getToken().getNomeToken().equals("SEPARADOR")) {
+		continue;
+	    }
 
 	    if (classificacaoAnterior == null
 		    || classificacaoAnterior.getToken().getNomeToken() != "PALAVRA_RESERVADA") {
@@ -119,6 +120,17 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	return false;
     }
 
+    private Boolean contemPalavra(List<Classificacao> classificacoesDaLinha, String palavra) {
+
+	for (Classificacao classificacao : classificacoesDaLinha) {
+	    if (classificacao.getLexema().getPalavra().equals(palavra)) {
+		return true;
+	    }
+	}
+
+	return false;
+    }
+
     private void validaExpressoesComParentese(List<Classificacao> classificacoesDaLinha)
 	    throws IllegalArgumentException {
 
@@ -149,7 +161,7 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	}).collect(Collectors.toList());
 
 	List<Classificacao> operadores = classificacoesSemParentese.stream()
-		.filter(item -> item.getToken().getNomeToken() == "OPERADOR").collect(Collectors.toList());
+		.filter(item -> item.getToken().getNomeToken().equals("OPERADOR")).collect(Collectors.toList());
 
 	for (int i = 0; i < operadores.size(); i++) {
 
@@ -170,9 +182,14 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 
     }
 
-    private void validaPontoVirgula(Token token, Integer linha) {
+    private void validaPontoVirgula(List<Classificacao> classificacoesDaLinha, Integer linha) {
 
-	if (!token.getNomeToken().equals("FIM_DE_LINHA")) {
+	if (contemPalavra(classificacoesDaLinha, "{") || contemPalavra(classificacoesDaLinha, "}")) {
+	    return;
+	}
+
+	if (!classificacoesDaLinha.get(classificacoesDaLinha.size() - 1).getToken().getNomeToken()
+		.equals("FIM_DE_LINHA")) {
 	    throw estourarExcessao(linha, "não contém ponto e virgula no final da linha");
 	}
     }

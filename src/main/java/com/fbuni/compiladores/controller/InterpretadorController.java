@@ -59,6 +59,7 @@ public class InterpretadorController {
 
 	    if (servicoSintatico.analisar(tabelaSimbolos)) {
 		retorno.put("mensagem", "Código interpretado com sucesso");
+
 		retorno.put("tabelaSimbolos", tabelaSimbolos);
 	    }
 
