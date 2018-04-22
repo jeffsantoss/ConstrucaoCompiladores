@@ -4,7 +4,7 @@ $(function(){
 $("#btAnalisar").click(function(){
 	
 	var dados = {
-		codigoFonte: $('#codigoFonte').val(),
+		codigoFonte: $('.CodeMirror-code').text(),
 		nomeLinguagem : 'javascript'
 	};
 	
@@ -33,10 +33,11 @@ $("#btAnalisar").click(function(){
 			
 			$("#divTabela").show();
 			
-			alert(retorno.mensagem);
+			toastr.success(retorno.mensagem);
 		},
 		error: function(xhr, message) {			
-			alert(xhr.responseJSON.message);
+			toastr.error(xhr.responseJSON.message);
+			
 		}
   });
 });

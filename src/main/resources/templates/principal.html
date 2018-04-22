@@ -1,13 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-</meta>
+<meta charset="UTF-8" />
 <script src="js/bootstrap/bootstrap.min.js"></script>
 <link href="css/bootstrap/bootstrap.css" rel="stylesheet" />
+<link href="css/bootstrap/bootstrap-theme.css" rel="stylesheet" />
+<link href="css/bootstrap/toastr.css" rel="stylesheet"/>
+<link href="css/bootstrap/codemirror.css" rel="stylesheet"/>
 
-<script
-	src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script	src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="js/toastr.js"></script>
+<script src="js/codemirror.js"></script>
+<script src="js/default.js"></script>
+	
 <script src="js/lexico.js"></script>
 
 <title>Compiladores</title>
@@ -15,8 +20,8 @@
 <body>
 	<div class="container">
 		<h3>Interpretador - Compiladores</h3>
-		<form>
-			<div class="form-group">
+		<form class="col-md-6">
+			<div class="form-group" id="BordaForm">
 				<label for="comment">Código</label>
 				<textarea class="form-control" rows="5" id="codigoFonte"></textarea>
 			</div>
@@ -24,7 +29,7 @@
 		</form>
 
 		<div id="divTabela" class="table-responsive" style="display:none;">
-			<table class="table" id="tabelaToken">
+			<table class="table table-bordered" id="tabelaToken">
 				<thead>
 					<tr>
 						<th>LEXEMA</th>
@@ -42,6 +47,5 @@
 </body>
 
 
-<link href="css/bootstrap/bootstrap-theme.css" rel="stylesheet" />
 
 </html>
