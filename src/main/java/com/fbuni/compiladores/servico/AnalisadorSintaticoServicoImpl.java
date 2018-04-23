@@ -61,14 +61,14 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 
 	    Classificacao classificacaoAnterior = obterClassificacaoPorCodigo(tabelaSimbolos, codToken - 1);
 
-	    if (classificacaoAnterior.getToken().getNomeToken().equals("SEPARADOR")) {
+	    if (classificacaoAnterior != null && classificacaoAnterior.getToken().getNomeToken().equals("SEPARADOR")) {
 		continue;
 	    }
 
 	    if (classificacaoAnterior == null
 		    || classificacaoAnterior.getToken().getNomeToken() != "PALAVRA_RESERVADA") {
 		throw estourarExcessao(variavel.getLexema().getLinha(),
-			"Variável " + variavel.getLexema().getPalavra() + " não declarada");
+			"Variável >" + variavel.getLexema().getPalavra() + "< não declarada");
 	    }
 	}
 
@@ -199,8 +199,7 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	StringBuilder str = new StringBuilder();
 	str.append("Erro na linha: ");
 	str.append(linha);
-
-	str.append("\ndescrição do erro: " + mensagem);
+	str.append("<br> DESCRIÇÃO: " + mensagem);
 
 	IllegalArgumentException e = new IllegalArgumentException(str.toString());
 

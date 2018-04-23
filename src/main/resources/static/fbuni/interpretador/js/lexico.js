@@ -4,7 +4,7 @@ $(function(){
 $("#btAnalisar").click(function(){
 	
 	var dados = {
-		codigoFonte: $('.CodeMirror-code').text(),
+		codigoFonte: $('#codigoFonte').val(),
 		nomeLinguagem : 'javascript'
 	};
 	
@@ -20,6 +20,7 @@ $("#btAnalisar").click(function(){
 			$("#tabelaToken tbody").empty();
 			
 			$(retorno.tabelaSimbolos).each(function(i, classificacao){
+				
 				var coluna = classificacao.lexema.colunaFinal ? "(" + classificacao.lexema.colunaInicial + "," + classificacao.lexema.colunaFinal + ")" : classificacao.lexema.colunaInicial;
 				
 				$("#tabelaToken tbody").append(
@@ -36,8 +37,7 @@ $("#btAnalisar").click(function(){
 			toastr.success(retorno.mensagem);
 		},
 		error: function(xhr, message) {			
-			toastr.error(xhr.responseJSON.message);
-			
+			toastr.error(xhr.responseJSON.message);			
 		}
   });
 });

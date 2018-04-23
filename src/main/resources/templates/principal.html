@@ -10,25 +10,31 @@
 
 <script	src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="js/toastr.js"></script>
-<script src="js/codemirror.js"></script>
-<script src="js/default.js"></script>
-	
+<script src="js/default.js"></script>	
 <script src="js/lexico.js"></script>
 
 <title>Compiladores</title>
 </head>
 <body>
 	<div class="container">
-		<h3>Interpretador - Compiladores</h3>
+	
+		<h3>Construção de Compiladores - FBUni</h3>
+		
+		<div class="row">
 		<form class="col-md-6">
+		
 			<div class="form-group" id="BordaForm">
-				<label for="comment">Código</label>
+				<label for="comment">Código Fonte</label>
 				<textarea class="form-control" rows="5" id="codigoFonte"></textarea>
 			</div>
-			<button id="btAnalisar" type="button" class="btn">Analisar</button>
+			
+			<button id="btAnalisar" type="button" class="btn">Análise Sintática</button>	
 		</form>
-
-		<div id="divTabela" class="table-responsive" style="display:none;">
+		</div>
+		
+		<br/>
+		
+		<div id="divTabela" class="table-responsive col-md-12 row" style="display:none;">
 			<table class="table table-bordered" id="tabelaToken">
 				<thead>
 					<tr>
@@ -45,7 +51,4 @@
 		</div>
 	</div>
 </body>
-
-
-
 </html>
