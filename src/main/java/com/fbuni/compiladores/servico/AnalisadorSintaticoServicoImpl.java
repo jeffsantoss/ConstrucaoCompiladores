@@ -15,6 +15,13 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
     @Override
     public Boolean analisar(List<Classificacao> tabelaSimbolos) throws Exception {
 
+	Classificacao classificacaoComErro = obterClassificacaoPoToken(tabelaSimbolos, "ERROR");
+
+	if (classificacaoComErro != null) {
+	    throw estourarExcessao(classificacaoComErro.getLexema().getLinha(),
+		    "Existe erro na tabela de símbolos. Favor Corrigir.");
+	}
+
 	analiseSintatica(tabelaSimbolos);
 
 	return true;
@@ -118,6 +125,17 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	}
 
 	return false;
+    }
+
+    private Classificacao obterClassificacaoPoToken(List<Classificacao> classificacoesDaLinha, String nomeToken) {
+
+	for (Classificacao classificacao : classificacoesDaLinha) {
+	    if (classificacao.getToken().getNomeToken().equals(nomeToken)) {
+		return classificacao;
+	    }
+	}
+
+	return null;
     }
 
     private Boolean contemPalavra(List<Classificacao> classificacoesDaLinha, String palavra) {

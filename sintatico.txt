@@ -1,0 +1,5 @@
+não poder declarar mesma variável duas vezes.
+não deixar de ter ; no final da linha
+verifica se todas as varíaveis foram realmente declaradas
+verifica os parenteses de expressões
+verifica se existem erros na tabela de símbolos.

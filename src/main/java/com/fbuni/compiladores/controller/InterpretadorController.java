@@ -58,6 +58,7 @@ public class InterpretadorController {
 	    List<Classificacao> tabelaSimbolos = servicoLexico.analisar(linguagemAlvo);
 
 	    if (servicoSintatico.analisar(tabelaSimbolos)) {
+
 		retorno.put("mensagem", "Código interpretado com sucesso");
 
 		retorno.put("tabelaSimbolos", tabelaSimbolos);
