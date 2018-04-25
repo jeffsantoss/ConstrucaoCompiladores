@@ -17,7 +17,7 @@ public enum ExpressaoRegular {
     // atribuição
     ATRIBUIÇÃO("[=]"),
     // DELIMITADOR DE FECHAMENTO
-    OPERADOR("[.|=|/|*|+|-]"),
+    OPERADOR("[-|/|*|+]"),
     // DELIMITADOR DE FECHAMENTO
     FIM_DE_LINHA("[;]"),
     // ,

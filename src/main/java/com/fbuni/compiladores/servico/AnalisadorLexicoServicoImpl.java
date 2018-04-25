@@ -211,8 +211,15 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 		    }
 
 		    Classificacao classificacaoExistente = verificaJaExisteIdentificador(classificacoes, classificacao);
+
 		    if (classificacaoExistente != null) {
-			classificacaoExistente.getLexema().setLinha(linha);
+
+			// Classificacao classificacaoNova = new Classificacao();
+			// classificacaoNova.setLexema(new
+			// Lexema(classificacaoExistente.getLexema().getPalavra()));
+			// classificacaoNova.getLexema().setLinha(linha);
+			// classificacaoNova.setToken(classificacaoExistente.getToken());
+
 			classificacoes.add(classificacaoExistente);
 			break;
 		    }

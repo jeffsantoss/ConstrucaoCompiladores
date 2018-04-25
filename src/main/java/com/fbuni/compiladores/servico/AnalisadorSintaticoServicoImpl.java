@@ -1,5 +1,6 @@
 package com.fbuni.compiladores.servico;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -43,17 +44,41 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 
 	IntStream.range(0, qtdLinhas).forEach(linha -> {
 
-	    List<Classificacao> classificacoesDaLinha = tabelaSimbolos.stream()
-		    .filter(x -> x.getLexema().getLinha().equals(linha + 1)).collect(Collectors.toList());
-
-	    List<Classificacao> classificacoesDaLinhaSemDuplicacao = classificacoesDaLinha.stream().distinct()
-		    .collect(Collectors.toList());
+	    List<Classificacao> classificacoesDaLinhaSemDuplicacao = tabelaSimbolos.stream()
+		    .filter(x -> x.getLexema().getLinha().equals(linha + 1)).distinct().collect(Collectors.toList());
 
 	    validaPontoVirgula(classificacoesDaLinhaSemDuplicacao, linha + 1);
 
-	    // expressões com parênteses.
-	    if (contemToken(classificacoesDaLinha, "OPERADOR")) {
-		validaExpressoesComParentese(classificacoesDaLinha);
+	    // pega o índice pelo nome do token e a linha;
+
+	    Integer indicePontoVirgulaLinhaAnterior = indiceClassificao(tabelaSimbolos, "FIM_DE_LINHA", linha);
+
+	    Integer indicePontoVirgulaLinhaPosterior = indiceClassificao(tabelaSimbolos, "FIM_DE_LINHA", linha + 1);
+
+	    List<Classificacao> classificacaoDaLinha = new ArrayList<Classificacao>();
+
+	    if (indicePontoVirgulaLinhaAnterior != -1) {
+		for (int i = indicePontoVirgulaLinhaAnterior + 1; i <= indicePontoVirgulaLinhaPosterior; i++) {
+		    classificacaoDaLinha.add(tabelaSimbolos.get(i));
+		}
+	    } else {
+		for (int i = 0; i <= indicePontoVirgulaLinhaPosterior; i++) {
+		    classificacaoDaLinha.add(tabelaSimbolos.get(i));
+		}
+	    }
+
+	    // expressões.
+	    if (contemToken(classificacaoDaLinha, "OPERADOR") || contemToken(classificacaoDaLinha, "ATRIBUIÇÃO")) {
+
+		// pega depois da atribuição
+
+		Integer indiceAposAtribuicao = indiceClassificao(classificacaoDaLinha, "ATRIBUIÇÃO") + 1;
+		Integer indiceFimDaLinha = indiceClassificao(classificacaoDaLinha, "FIM_DE_LINHA");
+
+		List<Classificacao> classificaoDeExpressoes = classificacaoDaLinha.subList(indiceAposAtribuicao,
+			indiceFimDaLinha);
+
+		validaExpressoes(classificaoDeExpressoes);
 	    }
 
 	});
@@ -149,8 +174,7 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	return false;
     }
 
-    private void validaExpressoesComParentese(List<Classificacao> classificacoesDaLinha)
-	    throws IllegalArgumentException {
+    private void validaExpressoes(List<Classificacao> classificacoesDaLinha) throws IllegalArgumentException {
 
 	Integer numlinha = classificacoesDaLinha.get(0).getLexema().getLinha();
 
@@ -178,22 +202,28 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 
 	}).collect(Collectors.toList());
 
+	if (classificacoesSemParentese.isEmpty() || classificacoesSemParentese == null) {
+	    throw estourarExcessao(numlinha, "Não contém expressões dentro dos parênteses");
+	}
+
 	List<Classificacao> operadores = classificacoesSemParentese.stream()
 		.filter(item -> item.getToken().getNomeToken().equals("OPERADOR")).collect(Collectors.toList());
 
+	List<Expressao> expressoes = new ArrayList<Expressao>();
+
 	for (int i = 0; i < operadores.size(); i++) {
 
-	    Integer indiceOperador = classificacoesSemParentese.indexOf(operadores.get(i));
+	    Integer indiceOperador = indiceClassificao(classificacoesSemParentese,
+		    operadores.get(i).getToken().getCodToken());
 
 	    try {
-
-		new Expressao(classificacoesSemParentese.get(indiceOperador - 1), operadores.get(i),
-			classificacoesSemParentese.get(indiceOperador + 1));
+		expressoes.add(new Expressao(classificacoesSemParentese.get(indiceOperador - 1), operadores.get(i),
+			classificacoesSemParentese.get(indiceOperador + 1)));
 
 	    } catch (IllegalArgumentException e) {
 		throw estourarExcessao(numlinha, e.getMessage());
 	    } catch (Exception e) {
-		throw estourarExcessao(numlinha, "Expressão inválida! coluna: " + indiceOperador);
+		throw estourarExcessao(numlinha, "Expressão inválida! Não foi possível montar uma expressão");
 	    }
 
 	}
@@ -222,6 +252,55 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	IllegalArgumentException e = new IllegalArgumentException(str.toString());
 
 	return e;
+    }
+
+    private Integer indiceClassificao(List<Classificacao> classificacoes, Integer codToken) {
+
+	Integer indice = 0;
+
+	for (Classificacao classificacao : classificacoes) {
+
+	    if (classificacao.getToken().getCodToken().equals(codToken)) {
+		return indice;
+	    }
+
+	    indice++;
+	}
+
+	return -1;
+    }
+
+    private Integer indiceClassificao(List<Classificacao> classificacoes, String nomeToken) {
+
+	Integer indice = 0;
+
+	for (Classificacao classificacao : classificacoes) {
+
+	    if (classificacao.getToken().getNomeToken().equals(nomeToken)) {
+		return indice;
+	    }
+
+	    indice++;
+	}
+
+	return -1;
+    }
+
+    private Integer indiceClassificao(List<Classificacao> classificacoes, String nomeToken, Integer linha) {
+
+	Integer indice = 0;
+
+	for (Classificacao classificacao : classificacoes) {
+
+	    if (classificacao.getToken().getNomeToken().equals(nomeToken)
+		    && classificacao.getLexema().getLinha().equals(linha)) {
+		return indice;
+	    }
+
+	    indice++;
+	}
+
+	return -1;
     }
 
 }
