@@ -191,6 +191,19 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	    throw estourarExcessao(numlinha, "expressão inválida, falta parênteses a abrir");
 	}
 
+	List<Classificacao> parenteseFechando = classificacoesDaLinha.stream()
+		.filter(c -> c.getToken().getNomeToken().equals("FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO"))
+		.collect(Collectors.toList());
+
+	for (int i = 0; i < parenteseFechando.size(); i++) {
+
+	    Integer indice = classificacoesDaLinha.indexOf(parenteseFechando.get(i));
+
+	    if (classificacoesDaLinha.get(indice + 1).getToken().getNomeToken() != "OPERADOR") {
+		throw estourarExcessao(numlinha, "Verifique se existe operadores entre as expressões");
+	    }
+	}
+
 	List<Classificacao> classificacoesSemParentese = classificacoesDaLinha.stream().filter(item -> {
 
 	    if (item.getToken().getNomeToken().equals("ABERTURA_FUNCAO_ESCOPO_INDEXACAO")
