@@ -199,6 +199,9 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 
 	    Integer indice = classificacoesDaLinha.indexOf(parenteseFechando.get(i));
 
+	    if (classificacoesDaLinha.get(indice + 1).getToken().getNomeToken() == "FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO")
+		continue;
+
 	    if (classificacoesDaLinha.get(indice + 1).getToken().getNomeToken() != "OPERADOR") {
 		throw estourarExcessao(numlinha, "Verifique se existe operadores entre as expressões");
 	    }
