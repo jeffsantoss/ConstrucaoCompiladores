@@ -195,14 +195,34 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 		.filter(c -> c.getToken().getNomeToken().equals("FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO"))
 		.collect(Collectors.toList());
 
+	List<Classificacao> parenteseAbrindo = classificacoesDaLinha.stream()
+		.filter(c -> c.getToken().getNomeToken().equals("ABERTURA_FUNCAO_ESCOPO_INDEXACAO"))
+		.collect(Collectors.toList());
+
 	for (int i = 0; i < parenteseFechando.size(); i++) {
 
-	    Integer indice = classificacoesDaLinha.indexOf(parenteseFechando.get(i));
+	    Integer indiceFechando = indiceClassificao(classificacoesDaLinha,
+		    parenteseFechando.get(i).getToken().getCodToken());
+	    Integer indiceAbrindo = indiceClassificao(classificacoesDaLinha,
+		    parenteseAbrindo.get(i).getToken().getCodToken());
 
-	    if (classificacoesDaLinha.get(indice + 1).getToken().getNomeToken() == "FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO")
+	    Boolean contemOperador = false;
+
+	    for (int j = indiceAbrindo; j < indiceFechando; j++) {
+		if (classificacoesDaLinha.get(j).getToken().getNomeToken().equals("OPERADOR")) {
+		    contemOperador = true;
+		}
+	    }
+
+	    if (!contemOperador) {
+		throw estourarExcessao(numlinha, "não contém operador dentro da expressão entre '('' ')'' ");
+	    }
+
+	    if (classificacoesDaLinha.get(indiceFechando + 1).getToken()
+		    .getNomeToken() == "FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO")
 		continue;
 
-	    if (classificacoesDaLinha.get(indice + 1).getToken().getNomeToken() != "OPERADOR") {
+	    if (classificacoesDaLinha.get(indiceFechando + 1).getToken().getNomeToken() != "OPERADOR") {
 		throw estourarExcessao(numlinha, "Verifique se existe operadores entre as expressões");
 	    }
 	}
