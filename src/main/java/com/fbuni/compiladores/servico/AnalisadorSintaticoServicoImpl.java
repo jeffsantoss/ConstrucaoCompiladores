@@ -218,13 +218,18 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 		throw estourarExcessao(numlinha, "não contém operador dentro da expressão entre '('' ')'' ");
 	    }
 
-	    if (classificacoesDaLinha.get(indiceFechando + 1).getToken()
-		    .getNomeToken() == "FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO")
-		continue;
+	    try {
+		if (classificacoesDaLinha.get(indiceFechando + 1).getToken()
+			.getNomeToken() == "FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO")
+		    continue;
 
-	    if (classificacoesDaLinha.get(indiceFechando + 1).getToken().getNomeToken() != "OPERADOR") {
-		throw estourarExcessao(numlinha, "Verifique se existe operadores entre as expressões");
+		if (classificacoesDaLinha.get(indiceFechando + 1).getToken().getNomeToken() != "OPERADOR") {
+		    throw estourarExcessao(numlinha, "Verifique se existe operadores entre as expressões");
+		}
+	    } catch (Exception e) {
+
 	    }
+
 	}
 
 	List<Classificacao> classificacoesSemParentese = classificacoesDaLinha.stream().filter(item -> {
