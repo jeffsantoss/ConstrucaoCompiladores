@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.fbuni.compiladores.model.Classificacao;
 import com.fbuni.compiladores.model.Expressao;
+import com.fbuni.compiladores.model.Token;
 
 @Service
 public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServico {
@@ -206,15 +207,27 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	    Integer indiceAbrindo = indiceClassificao(classificacoesDaLinha,
 		    parenteseAbrindo.get(i).getToken().getCodToken());
 
-	    Boolean contemOperador = false;
+	    Integer qtdOperadores = 0;
+	    Integer qtdNumeros = 0;
 
 	    for (int j = indiceAbrindo; j < indiceFechando; j++) {
+
 		if (classificacoesDaLinha.get(j).getToken().getNomeToken().equals("OPERADOR")) {
-		    contemOperador = true;
+		    qtdOperadores++;
+		}
+
+		Token tokenCorrente = classificacoesDaLinha.get(j).getToken();
+
+		if (tokenCorrente.getNomeToken().equals("PONTO_FLUTUANTE")
+			|| tokenCorrente.getNomeToken().equals("INTEIRO") || tokenCorrente.getNomeToken().equals("ID")
+			|| tokenCorrente.getNomeToken().equals("ID_VAR_LOCAL")) {
+		    qtdNumeros++;
 		}
 	    }
 
-	    if (!contemOperador) {
+	    Boolean expressoesCorreta = qtdOperadores == qtdNumeros - 1 ? true : false;
+
+	    if (!expressoesCorreta) {
 		throw estourarExcessao(numlinha, "não contém operador dentro da expressão entre '('' ')'' ");
 	    }
 
