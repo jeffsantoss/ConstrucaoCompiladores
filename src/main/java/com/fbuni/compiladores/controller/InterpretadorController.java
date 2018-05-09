@@ -3,6 +3,7 @@ package com.fbuni.compiladores.controller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -39,7 +40,7 @@ public class InterpretadorController {
 	Map<String, Object> retorno = new HashMap<String, Object>();
 
 	try {
-	    retorno.put("tabela", servicoLexico.analisar(linguagemAlvo));
+	    retorno.put("tabelaSimbolos", tabelaSimbolosSemValorRepetido(servicoLexico.analisar(linguagemAlvo)));
 	} catch (Exception e) {
 	    throw new Exception(e.getMessage());
 	}
@@ -61,7 +62,7 @@ public class InterpretadorController {
 
 		retorno.put("mensagem", "Código interpretado com sucesso");
 
-		retorno.put("tabelaSimbolos", tabelaSimbolos);
+		retorno.put("tabelaSimbolos", tabelaSimbolosSemValorRepetido(tabelaSimbolos));
 	    }
 
 	} catch (Exception e) {
@@ -71,4 +72,7 @@ public class InterpretadorController {
 	return retorno;
     }
 
+    List<Classificacao> tabelaSimbolosSemValorRepetido(List<Classificacao> tabela) {
+	return tabela.stream().distinct().collect(Collectors.toList());
+    }
 }

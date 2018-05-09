@@ -195,6 +195,10 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 		if (expressao.toString().equals(ExpressaoRegular.ID.toString())) {
 
+		    if (ehParametro(classificacoes, lexemasPosterioresDaLinha)) {
+			classificacao.getToken().setNomeToken("ID_VAR_LOCAL");
+		    }
+
 		    if (estaDentroDeFuncao(classificacoes)) {
 
 			if (ehFuncao(lexemasPosterioresDaLinha)) {
@@ -266,8 +270,7 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 	for (int i = 1; i < classificacoes.size(); i++) {
 
 	    if (classificacoes.get(i).equals(classificacao)) {
-		if (!classificacoes.get(classificacoes.size() - 1).getToken().getNomeToken()
-			.equals("PALAVRA_RESERVADA")) {
+		if (!classificacoes.get(classificacoes.size() - 1).getLexema().getPalavra().equals("var")) {
 		    return classificacoes.get(i);
 		}
 	    }
@@ -275,6 +278,20 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 	}
 
 	return null;
+    }
+
+    private boolean ehParametro(List<Classificacao> classificacoes, List<Lexema> lexemas) {
+
+	boolean contemFechando = lexemas.stream().filter(l -> l.getPalavra().equals(")")).count() == 1 ? true : false;
+
+	for (int i = classificacoes.size() - 1; i >= 0; i--) {
+
+	    if (classificacoes.get(i).getLexema().getPalavra().equals("(") && contemFechando) {
+		return true;
+	    }
+	}
+
+	return false;
     }
 
     // true - é variável local, false - é variável global
