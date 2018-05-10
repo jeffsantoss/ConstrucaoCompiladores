@@ -12,6 +12,7 @@ public interface AnalisadorSintaticoServico {
      * @param tabelaSimbolos
      * @return
      */
+
     public Boolean analisar(List<Classificacao> tabelaSimbolos) throws Exception;
 
 }

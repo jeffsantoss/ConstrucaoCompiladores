@@ -10,8 +10,8 @@ $("#btSintatico").click(function(){
 	
 	$.ajax({
 		
-		type: "POST",
 		url: 'sintatico',
+		type: "POST",
 		dataType: "json",
 		contentType:'application/json',
 		data: JSON.stringify(dados),	 

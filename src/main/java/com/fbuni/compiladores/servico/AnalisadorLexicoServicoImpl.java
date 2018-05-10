@@ -301,11 +301,11 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 	boolean contemParenteseFechado = false;
 	boolean estaEmUmBloco = false;
 
-	for (int i = classificacoes.size() - 1; i >= 0; i--) {
+	if (classificacoes.get(classificacoes.size() - 1).getToken().getNomeToken().equals("PALAVRA_RESERVADA")) {
+	    return false;
+	}
 
-	    if (classificacoes.get(i).getLexema().getPalavra().equals("}")) {
-		return false;
-	    }
+	for (int i = classificacoes.size() - 1; i >= 0; i--) {
 
 	    if (classificacoes.get(i).getLexema().getPalavra().equals("(")) {
 		contemParenteseAberto = true;
