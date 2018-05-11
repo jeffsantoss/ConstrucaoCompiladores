@@ -1,17 +1,16 @@
-float multi(a,b) {
+function multi(a,b) {
  return a * b;
 }
 
-
-int sub(a,b) {
+function sub(a,b) {
  return a - x;
 }
 
-main(){
+function main(){
  var a,b;
  var c, d = 5;
  ler(b);
  c = mult(d, sub(7,b));
- a = sub(c, (b-3) * 2);
+ a = sub(c, (b -3 ) * 2);
  print(a);
 }

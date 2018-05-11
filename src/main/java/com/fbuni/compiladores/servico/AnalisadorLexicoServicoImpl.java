@@ -301,7 +301,7 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 	boolean contemParenteseFechado = false;
 	boolean estaEmUmBloco = false;
 
-	if (classificacoes.get(classificacoes.size() - 1).getToken().getNomeToken().equals("PALAVRA_RESERVADA")) {
+	if (classificacoes.get(classificacoes.size() - 1).getLexema().getPalavra().equals("function")) {
 	    return false;
 	}
 
