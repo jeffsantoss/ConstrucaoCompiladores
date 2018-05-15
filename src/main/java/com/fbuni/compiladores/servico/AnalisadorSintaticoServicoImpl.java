@@ -4,164 +4,206 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fbuni.compiladores.model.Classificacao;
 import com.fbuni.compiladores.model.Expressao;
 import com.fbuni.compiladores.model.Metodo;
+import com.fbuni.compiladores.model.MetodosSingleton;
+import com.fbuni.compiladores.model.Parametro;
 import com.fbuni.compiladores.model.Token;
+import com.fbuni.compiladores.util.CompiladoresUtil;
 
 @Service
 public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServico {
 
-    List<Metodo> metodos;
+    @Autowired
+    private MetodosSingleton metodosSingleton;
 
     @Override
-    public Boolean analisar(List<Classificacao> tabelaSimbolos) throws Exception {
+    public void analisar(List<Classificacao> tabelaSimbolos) throws Exception {
 
-	Classificacao classificacaoComErro = obterClassificacaoPorToken(tabelaSimbolos, "ERROR");
+	Classificacao classificacaoComErro = CompiladoresUtil.obterClassificacaoPorToken(tabelaSimbolos, "ERROR");
 
 	if (classificacaoComErro != null) {
-	    throw estourarExcessao(classificacaoComErro.getLexema().getLinha(),
+	    throw CompiladoresUtil.estourarExcessao(classificacaoComErro.getLexema().getLinha(),
 		    "Existe erro na tabela de símbolos. Favor Corrigir.");
 	}
 
-	capturarDeclaracoesMetodos(tabelaSimbolos);
+	capturarMetodosDeclarados(tabelaSimbolos);
 
-	analisarDeclaracoesDeFuncao(tabelaSimbolos);
+	// analisa escopo por escopo de todos métodos declarados, armazenados em memória
+	for (Metodo metodo : metodosSingleton.getInstancia()) {
+	    analisarEscopo(metodo.getEscopo(), metodo.getParametros(), tabelaSimbolos);
+	}
 
-	// código principal
-	analisarEscopo(tabelaSimbolos, null);
+	// inclui na tabela de símbolos o escopo dos tokens
+	for (Metodo metodo : metodosSingleton.getInstancia()) {
+	    adicionarEscopoTabelaSimbolos(metodo, tabelaSimbolos);
+	}
 
-	return true;
+	List<Classificacao> tokensSemEscopo = tabelaSimbolos.stream().filter(t -> {
+
+	    if (!t.getToken().getNomeToken().contains("ESCOPO") || !t.getLexema().getPalavra().equals("function"))
+		return true;
+
+	    return false;
+
+	}).collect(Collectors.toList());
+
+	// analisa código que não tem escopo
+	analisarEscopo(tokensSemEscopo, null, tabelaSimbolos);
     }
 
-    private void analisarDeclaracoesDeFuncao(List<Classificacao> tabelaSimbolos) throws IllegalArgumentException {
+    @Override
+    public List<Metodo> obterMetodosDeclarados(List<Classificacao> tabelaSimbolos) throws Exception {
 
-	List<Classificacao> funcoes = tabelaSimbolos.stream()
+	capturarMetodosDeclarados(tabelaSimbolos);
+
+	return metodosSingleton.getInstancia();
+    }
+
+    private void capturarMetodosDeclarados(List<Classificacao> tabelaSimbolos) {
+
+	metodosSingleton.setInstancia(new ArrayList<Metodo>());
+
+	List<Classificacao> metodos = tabelaSimbolos.stream()
 		.filter(c -> c.getToken().getNomeToken().equals("ID_DECLARAÇÃO_FUNCAO")).collect(Collectors.toList());
 
-	for (Classificacao classificacao : funcoes) {
+	for (Classificacao classificacao : metodos) {
 
-	    Integer indiceFuncao = indiceClassificao(tabelaSimbolos, classificacao.getLexema().getPalavra(),
-		    "ID_DECLARAÇÃO_FUNCAO");
+	    Integer indiceFuncao = CompiladoresUtil.indiceClassificao(tabelaSimbolos,
+		    classificacao.getLexema().getPalavra(), "ID_DECLARAÇÃO_FUNCAO");
 
-	    Integer fechamentoEscopo = indiceClassificao(tabelaSimbolos, indiceFuncao, "}");
-	    Integer aberturaEscopo = indiceClassificao(tabelaSimbolos, indiceFuncao, "{");
-	    Integer aberturaParantese = indiceClassificao(tabelaSimbolos, indiceFuncao, "(");
-	    Integer fechamentoParentese = indiceClassificao(tabelaSimbolos, indiceFuncao, ")");
+	    Integer fechamentoEscopo = CompiladoresUtil.indiceClassificao(tabelaSimbolos, indiceFuncao, "}");
+	    Integer aberturaEscopo = CompiladoresUtil.indiceClassificao(tabelaSimbolos, indiceFuncao, "{");
+	    Integer aberturaParantese = CompiladoresUtil.indiceClassificao(tabelaSimbolos, indiceFuncao, "(");
+	    Integer fechamentoParentese = CompiladoresUtil.indiceClassificao(tabelaSimbolos, indiceFuncao, ")");
 
 	    if (fechamentoEscopo == -1 || fechamentoParentese == -1) {
-		throw estourarExcessao(classificacao.getLexema().getLinha(), "O escopo da função não foi fechado.");
+		throw CompiladoresUtil.estourarExcessao(classificacao.getLexema().getLinha(),
+			"O escopo da função " + classificacao.getLexema().getPalavra() + " não foi fechado.");
 	    } else if (aberturaEscopo == -1 || aberturaParantese == -1) {
-		throw estourarExcessao(classificacao.getLexema().getLinha(), "O escopo da função não foi aberto.");
+		throw CompiladoresUtil.estourarExcessao(classificacao.getLexema().getLinha(),
+			"O escopo da função " + classificacao.getLexema().getPalavra() + " não foi aberto.");
 	    }
 
-	    List<Classificacao> escopo = tabelaSimbolos.subList(
-		    indiceClassificao(tabelaSimbolos, indiceFuncao, "{") + 1,
-		    indiceClassificao(tabelaSimbolos, indiceFuncao, "}") + 1);
+	    String nomeMetodo = classificacao.getLexema().getPalavra();
 
-	    if (indiceClassificao(escopo, "function", "PALAVRA_RESERVADA") != -1) {
-		throw estourarExcessao(classificacao.getLexema().getLinha(),
+	    Metodo metodo = new Metodo();
+	    metodo.setNome(nomeMetodo);
+	    metodo.setParametros(obterParametros(tabelaSimbolos, indiceFuncao));
+	    metodo.setEscopo(
+		    tabelaSimbolos.subList(CompiladoresUtil.indiceClassificao(tabelaSimbolos, indiceFuncao, nomeMetodo),
+			    CompiladoresUtil.indiceClassificao(tabelaSimbolos, indiceFuncao, "}") + 1));
+
+	    if (CompiladoresUtil.indiceClassificao(metodo.getEscopo(), "function", "PALAVRA_RESERVADA") != -1) {
+		throw CompiladoresUtil.estourarExcessao(classificacao.getLexema().getLinha(),
 			"Não é permitido declara função dentro de um escopo");
 	    }
 
-	    analisarEscopo(tabelaSimbolos, escopo);
-
-	    adicionarEscopoTabelaSimbolos(classificacao.getLexema().getPalavra(), escopo);
-
+	    metodosSingleton.getInstancia().add(metodo);
 	}
-
     }
 
-    private void capturarDeclaracoesMetodos(List<Classificacao> tabelaSimbolos) {
+    private void adicionarEscopoTabelaSimbolos(Metodo metodo, List<Classificacao> tabelaSimbolos) {
 
-	metodos = new ArrayList<Metodo>();
+	for (Classificacao classificacaoDoEscopo : metodo.getEscopo()) {
 
-	List<Classificacao> funcoes = tabelaSimbolos.stream()
-		.filter(c -> c.getToken().getNomeToken().equals("ID_DECLARAÇÃO_FUNCAO")).collect(Collectors.toList());
-
-	for (Classificacao classificacao : funcoes) {
-
-	    Integer indiceFuncao = indiceClassificao(tabelaSimbolos, classificacao.getLexema().getPalavra(),
-		    "ID_DECLARAÇÃO_FUNCAO");
-
-	    metodos.add(new Metodo(classificacao.getLexema().getPalavra(),
-		    obterQuantidadeParametros(tabelaSimbolos, indiceFuncao)));
-
-	}
-
-    }
-
-    private void adicionarEscopoTabelaSimbolos(String nomeFuncao, List<Classificacao> escopo) {
-
-	for (Classificacao classificacao : escopo) {
+	    Classificacao classificacao = tabelaSimbolos.stream()
+		    .filter(c -> c.getToken().getCodToken().equals(classificacaoDoEscopo.getToken().getCodToken()))
+		    .findFirst().get();
 
 	    classificacao.getLexema().getPadrao()
-		    .setDescricao("Indica um token dentro do escopo do método: " + nomeFuncao);
+		    .setDescricao("Indica um token dentro do escopo do método: " + metodo.getNome());
 
-	    classificacao.getToken().setNomeToken(classificacao.getToken().getNomeToken() + "_ESCOPO_" + nomeFuncao);
+	    if (classificacao.getToken().getNomeToken().contains("ESCOPO")) {
+		classificacao.getToken()
+			.setNomeToken(classificacao.getToken().getNomeToken() + "_ESCOPO_" + metodo.getNome());
+	    }
 	}
 
     }
 
-    private void analisarEscopo(List<Classificacao> tabelaSimbolos, List<Classificacao> escopo)
-	    throws IllegalArgumentException {
+    private void analisarEscopo(List<Classificacao> escopo, List<Parametro> parametros,
+	    List<Classificacao> tabelaSimbolos) throws IllegalArgumentException {
 
-	Integer qtdLinhas = tabelaSimbolos.get(tabelaSimbolos.size() - 1).getLexema().getLinha();
+	if (escopo == null || escopo.isEmpty())
+	    return;
 
-	// Boolean ehEscopoFuncao = escopo != null ? true : false;
+	Integer qtdLinhas = escopo.get(escopo.size() - 1).getLexema().getLinha();
 
-	List<Classificacao> variaveis = tabelaSimbolos.stream().filter(
+	List<Classificacao> variaveis = escopo.stream().filter(
 		c -> c.getToken().getNomeToken().equals("ID") || c.getToken().getNomeToken().equals("ID_VAR_LOCAL"))
 		.distinct().collect(Collectors.toList());
 
 	// valida se as váriaveis foram declarado ou não
-	validaDeclaracaoDeVariavel(variaveis, tabelaSimbolos);
+	validaDeclaracaoDeVariavel(variaveis, tabelaSimbolos, parametros);
 
 	// valida se mesma varíavel foi declarada mais de 1x
 	validaDeclaracaoVariaveisRepetidas(variaveis, tabelaSimbolos);
 
-	List<Classificacao> chamadaDeFuncoes = tabelaSimbolos.stream()
-		.filter(c -> c.getToken().getNomeToken().equals("ID_CHAMADA_FUNCAO")).distinct()
-		.collect(Collectors.toList());
+	validaChamadaDeFuncoes(escopo);
 
-	validaChamadaDeFuncoes(chamadaDeFuncoes, tabelaSimbolos);
+	for (int linha = escopo.get(0).getLexema().getLinha(); linha < qtdLinhas; linha++) {
 
-	IntStream.range(0, qtdLinhas).forEach(linha -> {
+	    final int linhaCorrente = linha;
 
-	    List<Classificacao> classificacoesDaLinhaSemDuplicacao = tabelaSimbolos.stream()
-		    .filter(x -> x.getLexema().getLinha().equals(linha + 1)).distinct().collect(Collectors.toList());
+	    List<Classificacao> classificacoesDaLinhaSemDuplicacao = escopo.stream()
+		    .filter(x -> x.getLexema().getLinha().equals(linhaCorrente + 1)).distinct()
+		    .collect(Collectors.toList());
 
-	    validaPontoVirgula(classificacoesDaLinhaSemDuplicacao, linha + 1);
+	    if (CompiladoresUtil.contemPalavra(classificacoesDaLinhaSemDuplicacao, "{")
+		    || CompiladoresUtil.contemPalavra(classificacoesDaLinhaSemDuplicacao, "}")) {
+		continue;
+	    }
+
+	    validaPontoVirgula(classificacoesDaLinhaSemDuplicacao, escopo.get(linha).getLexema().getLinha());
 
 	    // pega o índice pelo nome do token e a linha;
+	    Integer indicePontoVirgulaLinhaAnterior = CompiladoresUtil.indiceClassificao(escopo, "FIM_DE_LINHA",
+		    escopo.get(linha).getLexema().getLinha());
 
-	    Integer indicePontoVirgulaLinhaAnterior = indiceClassificao(tabelaSimbolos, "FIM_DE_LINHA", linha);
-
-	    Integer indicePontoVirgulaLinhaPosterior = indiceClassificao(tabelaSimbolos, "FIM_DE_LINHA", linha + 1);
+	    Integer indicePontoVirgulaLinhaPosterior = CompiladoresUtil.indiceClassificao(escopo, "FIM_DE_LINHA",
+		    escopo.get(linha).getLexema().getLinha());
 
 	    List<Classificacao> classificacaoDaLinha = new ArrayList<Classificacao>();
 
 	    if (indicePontoVirgulaLinhaAnterior != -1) {
 		for (int i = indicePontoVirgulaLinhaAnterior + 1; i <= indicePontoVirgulaLinhaPosterior; i++) {
-		    classificacaoDaLinha.add(tabelaSimbolos.get(i));
+		    classificacaoDaLinha.add(escopo.get(i));
 		}
 	    } else {
-		for (int i = 0; i <= indicePontoVirgulaLinhaPosterior; i++) {
-		    classificacaoDaLinha.add(tabelaSimbolos.get(i));
+
+		Integer indiceAnterior = 0;
+
+		if (CompiladoresUtil.indiceClassificao(escopo, "ABERTURA_FUNCAO_ESCOPO_INDEXACAO", linha) != -1) {
+
+		    indiceAnterior = CompiladoresUtil.indiceClassificao(escopo, "ABERTURA_FUNCAO_ESCOPO_INDEXACAO",
+			    linha);
+
+		} else if (CompiladoresUtil.indiceClassificao(escopo, "FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO",
+			linha) != -1) {
+		    indiceAnterior = CompiladoresUtil.indiceClassificao(escopo, "FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO",
+			    linha);
+		}
+
+		for (int i = indiceAnterior; i <= indicePontoVirgulaLinhaPosterior; i++) {
+		    classificacaoDaLinha.add(escopo.get(i));
 		}
 	    }
 
 	    // expressões.
-	    if (contemToken(classificacaoDaLinha, "ATRIBUIÇÃO")) {
+	    if (CompiladoresUtil.contemToken(classificacaoDaLinha, "ATRIBUIÇÃO")) {
 
 		// pega depois da atribuição
 
-		Integer indiceAposAtribuicao = indiceClassificao(classificacaoDaLinha, "=", "ATRIBUIÇÃO") + 1;
-		Integer indiceFimDaLinha = indiceClassificao(classificacaoDaLinha, ";", "FIM_DE_LINHA");
+		Integer indiceAposAtribuicao = CompiladoresUtil.indiceClassificao(classificacaoDaLinha, "=",
+			"ATRIBUIÇÃO") + 1;
+		Integer indiceFimDaLinha = CompiladoresUtil.indiceClassificao(classificacaoDaLinha, ";",
+			"FIM_DE_LINHA");
 
 		List<Classificacao> classificaoDeExpressoes = classificacaoDaLinha.subList(indiceAposAtribuicao,
 			indiceFimDaLinha);
@@ -169,46 +211,84 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 		validaExpressoes(classificaoDeExpressoes);
 	    }
 
-	});
+	}
 
     }
 
-    private void validaChamadaDeFuncoes(List<Classificacao> chamadaDeFuncoes, List<Classificacao> tabelaSimbolos) {
+    private void validaChamadaDeFuncoes(List<Classificacao> escopo) {
+
+	List<Classificacao> chamadaDeFuncoes = escopo.stream()
+		.filter(c -> c.getToken().getNomeToken().equals("ID_CHAMADA_FUNCAO")).distinct()
+		.collect(Collectors.toList());
 
 	for (Classificacao classificacao : chamadaDeFuncoes) {
 
-	    Integer indiceFuncao = indiceClassificao(tabelaSimbolos, classificacao.getLexema().getPalavra(),
+	    Integer indiceFuncao = CompiladoresUtil.indiceClassificao(escopo, classificacao.getLexema().getPalavra(),
 		    "ID_CHAMADA_FUNCAO");
 
-	    Long qtd = obterQuantidadeParametros(tabelaSimbolos, indiceFuncao);
+	    Integer qtd = obterParametros(escopo, indiceFuncao).size();
 
 	    String nomeMetodo = classificacao.getLexema().getPalavra();
 
-	    Optional<Metodo> metodoExistente = metodos.stream().filter(m -> m.getNome().equals(nomeMetodo)).findAny();
+	    Optional<Metodo> metodoExistente = metodosSingleton.getInstancia().stream()
+		    .filter(m -> m.getNome().equals(nomeMetodo)).findAny();
 
 	    if (!metodoExistente.isPresent()) {
-		throw estourarExcessao(classificacao.getLexema().getLinha(),
+		throw CompiladoresUtil.estourarExcessao(classificacao.getLexema().getLinha(),
 			"Método " + nomeMetodo + " não foi declarado");
-	    } else if (metodoExistente.get().getQtdParametros() != qtd) {
-		throw estourarExcessao(classificacao.getLexema().getLinha(),
-			"Método " + nomeMetodo + " não contém o número de parâmetros esperado!");
+	    } else if (metodoExistente.get().getParametros().size() != qtd) {
+		throw CompiladoresUtil.estourarExcessao(classificacao.getLexema().getLinha(),
+			"Método " + nomeMetodo + " não contém o número de parâmetros esperado");
 	    }
 
 	}
     }
 
-    private Long obterQuantidadeParametros(List<Classificacao> classificacoes, Integer indiceStart) {
-	return classificacoes.subList(indiceClassificao(classificacoes, indiceStart, "(") + 1,
-		indiceClassificao(classificacoes, indiceStart, ")")).stream().filter(p -> {
+    private List<Parametro> obterParametros(List<Classificacao> classificacoes, Integer indiceStart) {
 
-		    if (p.getToken().getNomeToken().equals("SEPARADOR"))
-			return false;
+	List<Parametro> parametros = new ArrayList<Parametro>();
 
-		    return true;
-		}).count();
+	List<Classificacao> parametrosExtraidos = classificacoes.subList(
+		CompiladoresUtil.indiceClassificao(classificacoes, indiceStart, "("),
+		CompiladoresUtil.indiceClassificao(classificacoes, indiceStart, ")") + 1);
+
+	for (Classificacao classificacao : parametrosExtraidos) {
+
+	    if (classificacao.getLexema().getPalavra().equals(",") || classificacao.getLexema().getPalavra().equals(")")
+		    || classificacao.getLexema().getPalavra().equals("("))
+		continue;
+
+	    Parametro parametro = new Parametro();
+	    parametro.setNome(classificacao.getLexema().getPalavra());
+	    parametros.add(parametro);
+	}
+
+	if (parametros.isEmpty()) {
+	    return parametros;
+	}
+
+	List<Classificacao> chamadasFuncao = parametrosExtraidos.stream()
+		.filter(p -> p.getToken().getNomeToken().equals("ID_CHAMADA_FUNCAO")).collect(Collectors.toList());
+
+	if (!chamadasFuncao.isEmpty()) {
+
+	    for (Classificacao chamadaFuncao : chamadasFuncao) {
+
+		Integer indiceChamadaFuncao = parametrosExtraidos.indexOf(chamadaFuncao);
+
+		List<Parametro> parametrosDesconsiderados = obterParametros(parametrosExtraidos, indiceChamadaFuncao);
+
+		for (Parametro parametro : parametrosDesconsiderados) {
+		    parametros.remove(parametro);
+		}
+	    }
+	}
+
+	return parametros;
     }
 
-    private void validaDeclaracaoDeVariavel(List<Classificacao> variaveis, List<Classificacao> tabelaSimbolos) {
+    private void validaDeclaracaoDeVariavel(List<Classificacao> variaveis, List<Classificacao> tabelaSimbolos,
+	    List<Parametro> parametros) {
 
 	for (Classificacao variavel : variaveis) {
 
@@ -217,19 +297,18 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	    Classificacao classificacaoAnterior = obterClassificacaoPorCodigo(tabelaSimbolos, codToken - 1);
 
 	    // parâmetro de função
-	    if (classificacaoAnterior != null && classificacaoAnterior.getLexema().getPalavra().equals("(")) {
+	    if (parametros != null && parametros.stream()
+		    .filter(p -> p.getNome().equals(variavel.getLexema().getPalavra())).findAny().isPresent()) {
 		continue;
 	    }
 
-	    // dentro de escopo
-	    else if (classificacaoAnterior != null
-		    && classificacaoAnterior.getToken().getNomeToken().equals("SEPARADOR")) {
+	    if (classificacaoAnterior != null && classificacaoAnterior.getToken().getNomeToken().equals("SEPARADOR")) {
 		continue;
 	    }
 
 	    if (classificacaoAnterior == null
 		    || classificacaoAnterior.getToken().getNomeToken() != "PALAVRA_RESERVADA") {
-		throw estourarExcessao(variavel.getLexema().getLinha(),
+		throw CompiladoresUtil.estourarExcessao(variavel.getLexema().getLinha(),
 			"Variável >" + variavel.getLexema().getPalavra() + "< não declarada");
 	    }
 	}
@@ -250,8 +329,9 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 		    Integer indiceClassificacaoIgual = tabelaSimbolos.indexOf(classificacao);
 
 		    if (tabelaSimbolos.get(indiceClassificacaoIgual - 1).getLexema().getPalavra().equals("var")) {
-			throw estourarExcessao(identificadoresVariavel.get(j).getLexema().getLinha(), "a variável >"
-				+ identificadoresVariavel.get(i).getLexema().getPalavra() + "< já foi declarada");
+			throw CompiladoresUtil.estourarExcessao(identificadoresVariavel.get(j).getLexema().getLinha(),
+				"a variável >" + identificadoresVariavel.get(i).getLexema().getPalavra()
+					+ "< já foi declarada");
 		    }
 		}
 	    }
@@ -259,7 +339,7 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 
     }
 
-    private Classificacao obterClassificacaoPorCodigo(List<Classificacao> classificacaoes, Integer codToken) {
+    public Classificacao obterClassificacaoPorCodigo(List<Classificacao> classificacaoes, Integer codToken) {
 
 	for (Classificacao classificacao : classificacaoes) {
 	    if (classificacao.getToken().getCodToken().equals(codToken)) {
@@ -268,39 +348,6 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	}
 
 	return null;
-    }
-
-    private Boolean contemToken(List<Classificacao> classificacoesDaLinha, String nomeToken) {
-
-	for (Classificacao classificacao : classificacoesDaLinha) {
-	    if (classificacao.getToken().getNomeToken().equals(nomeToken)) {
-		return true;
-	    }
-	}
-
-	return false;
-    }
-
-    private Classificacao obterClassificacaoPorToken(List<Classificacao> classificacoesDaLinha, String nomeToken) {
-
-	for (Classificacao classificacao : classificacoesDaLinha) {
-	    if (classificacao.getToken().getNomeToken().equals(nomeToken)) {
-		return classificacao;
-	    }
-	}
-
-	return null;
-    }
-
-    private Boolean contemPalavra(List<Classificacao> classificacoesDaLinha, String palavra) {
-
-	for (Classificacao classificacao : classificacoesDaLinha) {
-	    if (classificacao.getLexema().getPalavra().equals(palavra)) {
-		return true;
-	    }
-	}
-
-	return false;
     }
 
     private void validaExpressoes(List<Classificacao> classificacoesDaLinha) throws IllegalArgumentException {
@@ -315,9 +362,9 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 		.filter(c -> c.getToken().getNomeToken().equals("FECHAMENTO_FUNCAO_ESCOPO_INDEXACAO")).count();
 
 	if (qtdAbertura > qtdFechamento) {
-	    throw estourarExcessao(numlinha, "expressão inválida, falta parênteses a fechar");
+	    throw CompiladoresUtil.estourarExcessao(numlinha, "expressão inválida, falta parênteses a fechar");
 	} else if (qtdFechamento > qtdAbertura) {
-	    throw estourarExcessao(numlinha, "expressão inválida, falta parênteses a abrir");
+	    throw CompiladoresUtil.estourarExcessao(numlinha, "expressão inválida, falta parênteses a abrir");
 	}
 
 	List<Classificacao> parenteseFechando = classificacoesDaLinha.stream()
@@ -328,19 +375,21 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 		.filter(c -> c.getToken().getNomeToken().equals("ABERTURA_FUNCAO_ESCOPO_INDEXACAO"))
 		.collect(Collectors.toList());
 
-	for (int i = 0; i < parenteseFechando.size(); i++) {
+	for (int pf = 0, pa = parenteseAbrindo.size() - 1; pf < parenteseFechando.size(); pf++, pa--) {
 
-	    Integer indiceFechando = indiceClassificao(classificacoesDaLinha,
-		    parenteseFechando.get(i).getToken().getCodToken());
-	    Integer indiceAbrindo = indiceClassificao(classificacoesDaLinha,
-		    parenteseAbrindo.get(i).getToken().getCodToken());
+	    Integer indiceFechando = CompiladoresUtil.indiceClassificao(classificacoesDaLinha,
+		    parenteseFechando.get(pf).getToken().getCodToken());
+
+	    Integer indiceAbrindo = CompiladoresUtil.indiceClassificao(classificacoesDaLinha,
+		    parenteseAbrindo.get(pa).getToken().getCodToken());
 
 	    Integer qtdOperadores = 0;
 	    Integer qtdNumeros = 0;
 
 	    for (int j = indiceAbrindo; j < indiceFechando; j++) {
 
-		if (classificacoesDaLinha.get(j).getToken().getNomeToken().equals("OPERADOR")) {
+		if (classificacoesDaLinha.get(j).getToken().getNomeToken().equals("OPERADOR")
+			|| classificacoesDaLinha.get(j).getToken().getNomeToken().equals("SEPARADOR")) {
 		    qtdOperadores++;
 		}
 
@@ -356,7 +405,8 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	    Boolean expressoesCorreta = qtdOperadores == qtdNumeros - 1 ? true : false;
 
 	    if (!expressoesCorreta) {
-		throw estourarExcessao(numlinha, "não contém operador dentro da expressão entre '('' ')'' ");
+		throw CompiladoresUtil.estourarExcessao(numlinha,
+			"não contém operador dentro da expressão entre '('' ')'' ");
 	    }
 
 	    try {
@@ -365,7 +415,8 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 		    continue;
 
 		if (classificacoesDaLinha.get(indiceFechando + 1).getToken().getNomeToken() != "OPERADOR") {
-		    throw estourarExcessao(numlinha, "Verifique se existe operadores entre as expressões");
+		    throw CompiladoresUtil.estourarExcessao(numlinha,
+			    "Verifique se existe operadores entre as expressões");
 		}
 	    } catch (Exception e) {
 
@@ -385,7 +436,7 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	}).collect(Collectors.toList());
 
 	if (classificacoesSemParentese.isEmpty() || classificacoesSemParentese == null) {
-	    throw estourarExcessao(numlinha, "Não contém expressões dentro dos parênteses");
+	    throw CompiladoresUtil.estourarExcessao(numlinha, "Não contém expressões dentro dos parênteses");
 	}
 
 	List<Classificacao> operadores = classificacoesSemParentese.stream()
@@ -395,7 +446,7 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 
 	for (int i = 0; i < operadores.size(); i++) {
 
-	    Integer indiceOperador = indiceClassificao(classificacoesSemParentese,
+	    Integer indiceOperador = CompiladoresUtil.indiceClassificao(classificacoesSemParentese,
 		    operadores.get(i).getToken().getCodToken());
 
 	    try {
@@ -403,9 +454,10 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 			classificacoesSemParentese.get(indiceOperador + 1)));
 
 	    } catch (IllegalArgumentException e) {
-		throw estourarExcessao(numlinha, e.getMessage());
+		throw CompiladoresUtil.estourarExcessao(numlinha, e.getMessage());
 	    } catch (Exception e) {
-		throw estourarExcessao(numlinha, "Expressão inválida! Não foi possível montar uma expressão");
+		throw CompiladoresUtil.estourarExcessao(numlinha,
+			"Expressão inválida! Não foi possível montar uma expressão");
 	    }
 
 	}
@@ -414,90 +466,11 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 
     private void validaPontoVirgula(List<Classificacao> classificacoesDaLinha, Integer linha) {
 
-	if (contemPalavra(classificacoesDaLinha, "{") || contemPalavra(classificacoesDaLinha, "}")) {
-	    return;
-	}
-
-	if (!classificacoesDaLinha.get(classificacoesDaLinha.size() - 1).getLexema().getPalavra().equals(";")) {
-	    throw estourarExcessao(linha, "não contém ponto e virgula no final da linha");
-	}
-    }
-
-    private IllegalArgumentException estourarExcessao(Integer linha, String mensagem) {
-
-	StringBuilder str = new StringBuilder();
-	str.append("Erro na linha: ");
-	str.append(linha);
-	str.append("<br> DESCRIÇÃO: " + mensagem);
-
-	IllegalArgumentException e = new IllegalArgumentException(str.toString());
-
-	return e;
-    }
-
-    private Integer indiceClassificao(List<Classificacao> classificacoes, Integer codToken) {
-
-	Integer indice = 0;
-
-	for (Classificacao classificacao : classificacoes) {
-
-	    if (classificacao.getToken().getCodToken().equals(codToken)) {
-		return indice;
+	if (!classificacoesDaLinha.isEmpty()) {
+	    if (!classificacoesDaLinha.get(classificacoesDaLinha.size() - 1).getLexema().getPalavra().equals(";")) {
+		throw CompiladoresUtil.estourarExcessao(linha, "não contém ponto e virgula no final da linha");
 	    }
-
-	    indice++;
 	}
-
-	return -1;
     }
 
-    private Integer indiceClassificao(List<Classificacao> classificacoes, String palavra, String nomeToken) {
-
-	Integer indice = 0;
-
-	for (Classificacao classificacao : classificacoes) {
-
-	    if (classificacao.getLexema().getPalavra().equals(palavra)
-		    && classificacao.getToken().getNomeToken().equals(nomeToken)) {
-		return indice;
-	    }
-
-	    indice++;
-	}
-
-	return -1;
-    }
-
-    private Integer indiceClassificao(List<Classificacao> classificacoes, String nomeToken, Integer linha) {
-
-	Integer indice = 0;
-
-	for (Classificacao classificacao : classificacoes) {
-
-	    if (classificacao.getToken().getNomeToken().equals(nomeToken)
-		    && classificacao.getLexema().getLinha().equals(linha)) {
-		return indice;
-	    }
-
-	    indice++;
-	}
-
-	return -1;
-    }
-
-    private Integer indiceClassificao(List<Classificacao> classificacoes, Integer indiceStart, String palavra) {
-
-	for (int i = indiceStart; i < classificacoes.size(); i++) {
-
-	    Classificacao classificacao = classificacoes.get(i);
-
-	    if (classificacao.getLexema().getPalavra().equals(palavra)) {
-		return i;
-	    }
-
-	}
-
-	return -1;
-
-    }
 }

@@ -11,6 +11,6 @@ function main(){
  var c, d = 5;
  ler(b);
  c = mult(d, sub(7,b));
- a = sub(c, (b -3 ) * 2);
+ a = sub(c, ( b -3 ) * 2);
  print(a);
 }

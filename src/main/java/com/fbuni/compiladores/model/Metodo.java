@@ -1,21 +1,41 @@
 package com.fbuni.compiladores.model;
 
-public class Metodo {
-    String nome;
-    Long qtdParametros;
+import java.util.List;
 
-    public Metodo(String nome, Long qtdParametros) {
+import com.fbuni.compiladores.enumeration.TipoVariavel;
+
+public class Metodo {
+
+    private String nome;
+    private List<Parametro> parametros;
+    private List<Classificacao> escopo;
+    private TipoVariavel tipoRetorno;
+
+    public TipoVariavel getTipoRetorno() {
+	return tipoRetorno;
+    }
+
+    public void setTipoRetorno(TipoVariavel tipoRetorno) {
+	this.tipoRetorno = tipoRetorno;
+    }
+
+    public List<Classificacao> getEscopo() {
+	return escopo;
+    }
+
+    public void setEscopo(List<Classificacao> escopo) {
+
+	this.escopo = escopo;
+    }
+
+    public Metodo(String nome, List<Parametro> parametros) {
 	super();
 	this.nome = nome;
-	this.qtdParametros = qtdParametros;
+	this.parametros = parametros;
     }
 
-    public Long getQtdParametros() {
-	return qtdParametros;
-    }
-
-    public void setQtdParametros(Long qtdParametros) {
-	this.qtdParametros = qtdParametros;
+    public Metodo() {
+	// TODO Auto-generated constructor stub
     }
 
     public String getNome() {
@@ -24,6 +44,14 @@ public class Metodo {
 
     public void setNome(String nome) {
 	this.nome = nome;
+    }
+
+    public List<Parametro> getParametros() {
+	return parametros;
+    }
+
+    public void setParametros(List<Parametro> parametros) {
+	this.parametros = parametros;
     }
 
 }

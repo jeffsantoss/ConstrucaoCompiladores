@@ -267,7 +267,16 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
     private Classificacao verificaJaExisteIdentificador(List<Classificacao> classificacoes,
 	    Classificacao classificacao) {
 
-	for (int i = 1; i < classificacoes.size(); i++) {
+	Integer indiceUltimoEscopo = 0;
+
+	for (int i = classificacoes.size() - 1; i >= 0; i--) {
+	    if (classificacoes.get(i).getLexema().getPalavra().equals("}")) {
+		indiceUltimoEscopo = classificacoes.indexOf(classificacoes.get(i));
+		break;
+	    }
+	}
+
+	for (int i = indiceUltimoEscopo; i < classificacoes.size(); i++) {
 
 	    if (classificacoes.get(i).equals(classificacao)) {
 		if (!classificacoes.get(classificacoes.size() - 1).getLexema().getPalavra().equals("var")) {

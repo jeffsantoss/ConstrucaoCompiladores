@@ -40,7 +40,7 @@ public class InterpretadorController {
 	Map<String, Object> retorno = new HashMap<String, Object>();
 
 	try {
-	    retorno.put("tabelaSimbolos", tabelaSimbolosSemValorRepetido(servicoLexico.analisar(linguagemAlvo)));
+	    retorno.put("tabelaSimbolos", servicoLexico.analisar(linguagemAlvo));
 	} catch (Exception e) {
 	    throw new Exception(e.getMessage());
 	}
@@ -58,12 +58,13 @@ public class InterpretadorController {
 
 	    List<Classificacao> tabelaSimbolos = servicoLexico.analisar(linguagemAlvo);
 
-	    if (servicoSintatico.analisar(tabelaSimbolos)) {
+	    servicoSintatico.analisar(tabelaSimbolos);
 
-		retorno.put("mensagem", "Código interpretado com sucesso");
+	    retorno.put("mensagem", "Código interpretado com sucesso");
 
-		retorno.put("tabelaSimbolos", tabelaSimbolosSemValorRepetido(tabelaSimbolos));
-	    }
+	    retorno.put("metodosDeclarados", servicoSintatico.obterMetodosDeclarados(tabelaSimbolos));
+
+	    retorno.put("tabelaSimbolos", tabelaSimbolos);
 
 	} catch (Exception e) {
 	    throw new Exception(e.getMessage());
