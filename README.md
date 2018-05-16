@@ -10,6 +10,7 @@ Segue as URLs:
 <br>
 /fbuni/interpretador/sintatico
 <br>
+
 Exemplo de payload em JSON de ambos paths:
 
 <pre>
@@ -18,3 +19,14 @@ Exemplo de payload em JSON de ambos paths:
   "codigoFonte": "var a = 1; \n var b = ((6 / 3 ) * 5))) - 6;"
 }
 </pre>
+
+
+
+Publiquei na web para testes:
+
+GETs
+https://fbunicompiladores.herokuapp.com/fbuni/interpretador/
+
+POSTs
+https://fbunicompiladores.herokuapp.com/fbuni/interpretador/sintatico
+https://fbunicompiladores.herokuapp.com/fbuni/interpretador/lexico
