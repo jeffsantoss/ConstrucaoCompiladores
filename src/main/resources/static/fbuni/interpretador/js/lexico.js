@@ -44,7 +44,7 @@ $("#btVerMetodos").click(function(){
 		
 		$("#metodos").append("<h1 ALIGN='center'> Método:" + metodo.nome +"</h1>")
 		
-		$("#metodos").append("<h1 ALIGN='center'>Parâmetros:</h1>")
+//		$("#metodos").append("<h1 ALIGN='center'>Parâmetros:</h1>")
 		
 //		for (let parametro of metodo.parametros) {			
 //			$("#metodos").append("<p ALIGN='center'> <b>" + parametro.nome +"</b></p>")			
