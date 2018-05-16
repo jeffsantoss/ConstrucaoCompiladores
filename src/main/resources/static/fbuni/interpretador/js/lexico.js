@@ -1,3 +1,4 @@
+var metodosDeclarados;
 
 $(function(){
 
@@ -18,8 +19,12 @@ $("#btSintatico").click(function(){
 		success: function(retorno) {
 			
 		    montarTabela(retorno.tabelaSimbolos);
+		    
+		    metodosDeclarados = retorno.metodosDeclarados;
 			
 			toastr.success(retorno.mensagem);
+			
+			$('#btVerMetodos').show();			
 		},
 		error: function(xhr, message) {			
 			toastr.error(xhr.responseJSON.message);			
@@ -27,6 +32,34 @@ $("#btSintatico").click(function(){
   });
 });
 
+
+$("#btVerMetodos").click(function(){
+	
+	$("#divTabelaMetodos").show();
+	$("#divTabela").hide();
+	
+	$("#qtdMetodosDeclarados").text(metodosDeclarados.length);
+	
+	metodosDeclarados.forEach(function(metodo,indice) {
+		
+		$("#metodos").append("<h1 ALIGN='center'> Método:" + metodo.nome +"</h1>")
+		
+		$("#metodos").append("<h1 ALIGN='center'>Parâmetros:</h1>")
+		
+//		for (let parametro of metodo.parametros) {			
+//			$("#metodos").append("<p ALIGN='center'> <b>" + parametro.nome +"</b></p>")			
+//		}
+				
+		for (let classificacao of metodo.escopo) {
+			$("#metodos").append("<p ALIGN='center'> <b>" + classificacao.lexema.palavra +"</b> &nbsp "+ classificacao.token.tokenFormatado + "</p>")
+			$("#metodos").append("<br>")
+		}
+				
+	});
+
+	
+	$('#btVerMetodos').hide();
+});
 
 $("#btLexico").click(function(){
 	
@@ -69,7 +102,6 @@ function montarTabela(tabelaSimbolos) {
 	});
 	
 	$("#divTabela").show();
-	
 
 }
 

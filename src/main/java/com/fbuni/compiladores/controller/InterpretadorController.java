@@ -62,7 +62,7 @@ public class InterpretadorController {
 
 	    retorno.put("mensagem", "Código interpretado com sucesso");
 
-	    retorno.put("metodosDeclarados", servicoSintatico.obterMetodosDeclarados(tabelaSimbolos));
+	    retorno.put("metodosDeclarados", servicoSintatico.obterMetodosDeclarados());
 
 	    retorno.put("tabelaSimbolos", tabelaSimbolosSemValorRepetido(tabelaSimbolos));
 

@@ -102,10 +102,7 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
     }
 
     @Override
-    public List<Metodo> obterMetodosDeclarados(List<Classificacao> tabelaSimbolos) throws Exception {
-
-	capturarMetodosDeclarados(tabelaSimbolos);
-
+    public List<Metodo> obterMetodosDeclarados() throws Exception {
 	return metodosSingleton.getInstancia();
     }
 

@@ -23,6 +23,6 @@ public interface AnalisadorSintaticoServico {
      * @return
      */
 
-    public List<Metodo> obterMetodosDeclarados(List<Classificacao> tabelaSimbolos) throws Exception;
+    public List<Metodo> obterMetodosDeclarados() throws Exception;
 
 }
