@@ -40,7 +40,7 @@ public class InterpretadorController {
 	Map<String, Object> retorno = new HashMap<String, Object>();
 
 	try {
-	    retorno.put("tabelaSimbolos", servicoLexico.analisar(linguagemAlvo));
+	    retorno.put("tabelaSimbolos", tabelaSimbolosSemValorRepetido(servicoLexico.analisar(linguagemAlvo)));
 	} catch (Exception e) {
 	    throw new Exception(e.getMessage());
 	}
@@ -64,7 +64,7 @@ public class InterpretadorController {
 
 	    retorno.put("metodosDeclarados", servicoSintatico.obterMetodosDeclarados(tabelaSimbolos));
 
-	    retorno.put("tabelaSimbolos", tabelaSimbolos);
+	    retorno.put("tabelaSimbolos", tabelaSimbolosSemValorRepetido(tabelaSimbolos));
 
 	} catch (Exception e) {
 	    throw new Exception(e.getMessage());

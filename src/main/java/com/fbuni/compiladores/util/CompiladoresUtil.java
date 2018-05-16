@@ -51,13 +51,13 @@ public class CompiladoresUtil {
 	return -1;
     }
 
-    public static Integer indiceClassificao(List<Classificacao> classificacoes, String nomeToken, Integer linha) {
+    public static Integer indiceClassificao(List<Classificacao> classificacoes, String palavra, Integer linha) {
 
 	Integer indice = 0;
 
 	for (Classificacao classificacao : classificacoes) {
 
-	    if (classificacao.getToken().getNomeToken().equals(nomeToken)
+	    if (classificacao.getLexema().getPalavra().equals(palavra)
 		    && classificacao.getLexema().getLinha().equals(linha)) {
 		return indice;
 	    }

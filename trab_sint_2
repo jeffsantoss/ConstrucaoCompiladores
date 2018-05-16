@@ -14,3 +14,41 @@ function main(){
  a = sub(c, ( b -3 ) * 2);
  print(a);
 }
+
+
+
+erro
+
+function maining() {
+ var 1x,y,z = '3';
+ read(x);
+ y = mult(x, div(,5));
+}
+
+function sum[a,b] 
+  int x = 2*;
+  return y;
+}
+
+function mult(x,y)
+  z = x *y;
+}
+ 
+
+certo
+
+function main() {
+ var x,y,z = 2;
+ read(x);
+ y = mult(x,sum(z,5));
+}
+
+function sum(a,b){
+ var x = a + b;
+ return x;
+}
+
+function mult(x,y) {
+ var z = x + y;
+}
+

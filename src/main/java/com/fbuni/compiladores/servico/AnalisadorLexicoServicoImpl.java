@@ -218,12 +218,6 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 		    if (classificacaoExistente != null) {
 
-			// Classificacao classificacaoNova = new Classificacao();
-			// classificacaoNova.setLexema(new
-			// Lexema(classificacaoExistente.getLexema().getPalavra()));
-			// classificacaoNova.getLexema().setLinha(linha);
-			// classificacaoNova.setToken(classificacaoExistente.getToken());
-
 			classificacoes.add(classificacaoExistente);
 			break;
 		    }
@@ -271,19 +265,15 @@ public class AnalisadorLexicoServicoImpl implements AnalisadorLexicoServico {
 
 	for (int i = classificacoes.size() - 1; i >= 0; i--) {
 	    if (classificacoes.get(i).getLexema().getPalavra().equals("}")) {
-		indiceUltimoEscopo = classificacoes.indexOf(classificacoes.get(i));
+		indiceUltimoEscopo = i;
 		break;
 	    }
 	}
 
 	for (int i = indiceUltimoEscopo; i < classificacoes.size(); i++) {
-
 	    if (classificacoes.get(i).equals(classificacao)) {
-		if (!classificacoes.get(classificacoes.size() - 1).getLexema().getPalavra().equals("var")) {
-		    return classificacoes.get(i);
-		}
+		return classificacoes.get(i);
 	    }
-
 	}
 
 	return null;
