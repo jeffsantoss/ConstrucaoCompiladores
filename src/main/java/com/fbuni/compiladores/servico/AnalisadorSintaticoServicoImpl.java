@@ -287,7 +287,7 @@ public class AnalisadorSintaticoServicoImpl implements AnalisadorSintaticoServic
 	Integer indiceUltimoParentese = 0;
 
 	if (ehChamada) {
-	    for (int i = classificacoes.size() - 1; i >= indiceStart; i--) {
+	    for (int i = indiceStart; i < classificacoes.size(); i++) {
 		if (classificacoes.get(i).getLexema().getPalavra().equals(";")) {
 		    indiceUltimoParentese = i - 1;
 		    break;
